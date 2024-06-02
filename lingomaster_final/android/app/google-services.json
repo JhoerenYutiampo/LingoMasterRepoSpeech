@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "332066908422",
+    "project_id": "lingo-master-c3b33",
+    "storage_bucket": "lingo-master-c3b33.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:332066908422:android:26ccb11bbc7dfbd304d687",
+        "android_client_info": {
+          "package_name": "com.example.lingomaster_final"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBYqBSSP-ijsin36wE0O2XcOYgxO5YNgRs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
