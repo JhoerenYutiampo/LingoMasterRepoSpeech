@@ -9,8 +9,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 class AppUser {
   final String? email;
   String? bio;
+  int exp;
 
-  AppUser({this.email, this.bio});
+  AppUser({this.email, this.bio, this.exp = 0});
 }
 
 class ProfilePage extends StatefulWidget {
@@ -31,7 +32,39 @@ class _ProfilePageState extends State<ProfilePage> {
     currentUser = AppUser(
       email: FirebaseAuth.instance.currentUser!.email,
       bio: '', // Initialize bio to empty string
+      exp: 0,
     );
+    _fetchUserData();
+  }
+
+  Future<void> _fetchUserData() async {
+    DocumentSnapshot userDoc = await usersCollection.doc(currentUser.email).get();
+    if (userDoc.exists) {
+      Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
+      setState(() {
+        currentUser.bio = userData['bio'] ?? '';
+        currentUser.exp = userData['exp'] ?? 0;
+      });
+    }
+  }
+
+  //Calculate level from exp
+  Map<String, dynamic> calculateLevel(int exp) {
+    int level = 0;
+    int expNeededForNextLevel = 10;
+    int remainingExp = exp;
+
+    while (remainingExp >= expNeededForNextLevel) {
+      remainingExp -= expNeededForNextLevel;
+      level++;
+      expNeededForNextLevel += 10;
+    }
+
+    return {
+      'level': level,
+      'currentExp': remainingExp,
+      'expNeededForNextLevel': expNeededForNextLevel - remainingExp,
+    };
   }
 
   // Initialize SharedPreferences
@@ -107,6 +140,18 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
+  Widget _buildExpInfo() {
+  Map<String, dynamic> levelInfo = calculateLevel(currentUser.exp);
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text('Level: ${levelInfo['level']}'),
+      //Text('Current EXP: ${levelInfo['currentExp']}'),
+      Text('EXP needed for next level: ${levelInfo['expNeededForNextLevel']}'),
+    ],
+  );
+}
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -153,6 +198,10 @@ class _ProfilePageState extends State<ProfilePage> {
                   sectionName: 'bio',
                   onPressed: () => editField('bio'),
                 ),
+                const SizedBox(height: 50),
+
+                // EXP and Level info
+                _buildExpInfo(),
                 const SizedBox(height: 50),
               ],
             ),

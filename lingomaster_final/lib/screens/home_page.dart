@@ -3,6 +3,7 @@ import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:lingomaster_final/screens/profile.dart';
 import 'package:lingomaster_final/screens/letters.dart';
 import 'package:lingomaster_final/screens/question.dart';
+import 'package:lingomaster_final/screens/speech_card.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -124,7 +125,7 @@ class HomeScreen extends StatelessWidget {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => Question(category: category),
+            builder: (context) => SpeechCard(category: category),
           ),
         );
       },

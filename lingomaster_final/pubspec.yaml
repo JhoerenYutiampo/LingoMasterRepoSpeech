@@ -49,7 +49,7 @@ dependencies:
   gallery_picker: ^0.4.8
   shared_preferences: ^2.2.3
   speech_to_text: ^6.6.1
-  
+  string_similarity: ^2.0.0
 
  
 dev_dependencies:

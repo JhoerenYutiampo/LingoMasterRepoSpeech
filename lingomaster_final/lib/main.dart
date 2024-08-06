@@ -8,6 +8,9 @@ import 'package:lingomaster_final/screens/profile.dart';
 import 'package:lingomaster_final/screens/question.dart';
 import 'package:lingomaster_final/screens/signin_screen.dart';
 import 'package:lingomaster_final/screens/speech_recog.dart';
+import 'package:lingomaster_final/screens/speech_card.dart';
+
+String category = "Level 1";
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -50,7 +53,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: Letters(),
+      home: SignInScreen(),
     );
   }
 }
