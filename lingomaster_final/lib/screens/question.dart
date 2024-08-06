@@ -15,6 +15,7 @@ class Question extends StatefulWidget {
 
 class _QuestionState extends State<Question> {
   bool show = false;
+  bool isCorrectAnswer = false;
   Stream? quizStream;
   PageController controller = PageController();
   int totalPages = 0;
@@ -28,6 +29,33 @@ class _QuestionState extends State<Question> {
   getOnTheLoad() async {
     quizStream = await DatabaseMethods().getCategoryQuiz(widget.category);
     setState(() {});
+  }
+
+  void _handleNextPage() {
+    if (isCorrectAnswer) {
+      if (controller.page?.toInt() == totalPages - 1) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => SpeechCard(category: widget.category),
+          ),
+        );
+      } else {
+        setState(() {
+          show = false;
+          isCorrectAnswer = false;
+        });
+        controller.nextPage(
+          duration: Duration(milliseconds: 200),
+          curve: Curves.easeIn,
+        );
+      }
+    } else {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => HomePage()),
+      );
+    }
   }
 
   Widget allQuiz() {
@@ -73,6 +101,7 @@ class _QuestionState extends State<Question> {
                       onTap: () {
                         setState(() {
                           show = true;
+                          isCorrectAnswer = ds["correct"] == ds[optionKey];
                         });
                       },
                       child: Container(
@@ -161,50 +190,17 @@ class _QuestionState extends State<Question> {
             bottom: 20,
             right: 20,
             child: GestureDetector(
-              onTap: () {
-                if (controller.page?.toInt() == totalPages - 1) {
-                  Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => SpeechCard(category: category),
-                                ),
-                              );
-                  Future.delayed(Duration(milliseconds: 100), () {
-                    showDialog(
-                      context: context,
-                      builder: (context) => AlertDialog(
-                        title: Text('Well Done'),
-                        content: Text('You have finished the written test'),
-                        actions: [
-                          TextButton(
-                            onPressed: () {
-                              Navigator.of(context).pop();
-                            },
-                            child: Text('OK'),
-                          ),
-                        ],
-                      ),
-                    );
-                  });
-                } else {
-                  setState(() {
-                    show = false;
-                  });
-                  controller.nextPage(
-                    duration: Duration(milliseconds: 200),
-                    curve: Curves.easeIn,
-                  );
-                }
-              },
+              onTap: show ? _handleNextPage : null,
               child: Container(
                 padding: EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   border: Border.all(color: Colors.black),
                   borderRadius: BorderRadius.circular(30),
+                  color: show ? Colors.white : Colors.grey,
                 ),
                 child: Icon(
                   Icons.arrow_forward_ios,
-                  color: Color.fromARGB(230, 62, 170, 58),
+                  color: show ? Color.fromARGB(230, 62, 170, 58) : Colors.black54,
                 ),
               ),
             ),
