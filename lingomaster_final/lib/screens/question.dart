@@ -1,7 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:lingomaster_final/main.dart';
 import 'package:lingomaster_final/screens/home_page.dart';
 import 'package:lingomaster_final/service/database.dart';
+import 'package:lingomaster_final/screens/speech_card.dart';
 
 class Question extends StatefulWidget {
   final String category;
@@ -161,18 +163,18 @@ class _QuestionState extends State<Question> {
             child: GestureDetector(
               onTap: () {
                 if (controller.page?.toInt() == totalPages - 1) {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => HomePage(),
-                    ),
-                  );
+                  Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => SpeechCard(category: category),
+                                ),
+                              );
                   Future.delayed(Duration(milliseconds: 100), () {
                     showDialog(
                       context: context,
                       builder: (context) => AlertDialog(
-                        title: Text('Congratulations'),
-                        content: Text('You have finished a level'),
+                        title: Text('Well Done'),
+                        content: Text('You have finished the written test'),
                         actions: [
                           TextButton(
                             onPressed: () {
