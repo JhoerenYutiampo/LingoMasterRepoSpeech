@@ -113,7 +113,7 @@ class _SpeechCardState extends State<SpeechCard> {
           itemCount: totalPages,
           itemBuilder: (context, index) {
             DocumentSnapshot ds = snapshot.data.docs[index];
-            _targetText = ds["correct"];
+            _targetText = ds["sound"];
             return Container(
               padding: EdgeInsets.all(16),
               width: MediaQuery.of(context).size.width,
@@ -148,7 +148,7 @@ class _SpeechCardState extends State<SpeechCard> {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      ds["correct"],
+                      ds["sound"],
                       style: TextStyle(
                         color: Colors.black,
                         fontSize: 18.0,

@@ -17,6 +17,7 @@ class _SpeechCardState extends State<SpeechCard> {
   Stream? quizStream;
   PageController controller = PageController();
   int totalPages = 0;
+  int currentPage = 0;
 
   final SpeechToText _speechToText = SpeechToText();
   bool _speechEnabled = false;
@@ -24,6 +25,7 @@ class _SpeechCardState extends State<SpeechCard> {
   double _confidenceLevel = 0;
   double _similarityScore = 0;
   String _targetText = "";
+  bool _canProceed = false;
 
   @override
   void initState() {
@@ -46,6 +48,8 @@ class _SpeechCardState extends State<SpeechCard> {
     );
     setState(() {
       _confidenceLevel = 0;
+      _similarityScore = 0;
+      _canProceed = false;
     });
   }
 
@@ -59,39 +63,60 @@ class _SpeechCardState extends State<SpeechCard> {
       _wordsSpoken = result.recognizedWords;
       _confidenceLevel = result.confidence;
       _similarityScore = _wordsSpoken.similarityTo(_targetText);
+      _canProceed = _similarityScore >= 0.60;
     });
   }
 
-  Future<void> completeLevel() async {
-    if (_similarityScore >= 0.60) {
-      await DatabaseMethods().addExpToUser(10);
-
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => HomePage(),
-        ),
-      );
-
-      Future.delayed(Duration(milliseconds: 100), () {
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: Text('Congratulations'),
-            content: Text('You have finished a level and earned 10 EXP!'),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-                child: Text('OK'),
-              ),
-            ],
-          ),
+  void _handleNextPage() {
+    if (_canProceed) {
+      if (currentPage == totalPages - 1) {
+        completeLevel();
+      } else {
+        setState(() {
+          currentPage++;
+          _wordsSpoken = "";
+          _confidenceLevel = 0;
+          _similarityScore = 0;
+          _canProceed = false;
+        });
+        controller.nextPage(
+          duration: Duration(milliseconds: 200),
+          curve: Curves.easeIn,
         );
-      });
+      }
     }
   }
+
+  Future<void> completeLevel() async {
+  await DatabaseMethods().addExpToUser(10);
+
+  Navigator.pushReplacement(
+    context,
+    MaterialPageRoute(
+      builder: (context) => HomePage(),
+    ),
+  );
+
+  Future.delayed(Duration(milliseconds: 100), () {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Level Complete'),
+        content: Text(totalPages > 0 
+          ? 'You have finished all questions and earned 10 EXP!' 
+          : 'Level completed. You earned 10 EXP!'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: Text('OK'),
+          ),
+        ],
+      ),
+    );
+  });
+}
 
   getOnTheLoad() async {
     quizStream = await DatabaseMethods().getCategoryQuiz(widget.category);
@@ -106,14 +131,28 @@ class _SpeechCardState extends State<SpeechCard> {
           return Center(child: CircularProgressIndicator());
         }
 
+        if (snapshot.data.docs.isEmpty) {
+          // Handle empty database case
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            completeLevel();
+          });
+          return Center(child: Text("No questions available."));
+        }
+
         totalPages = snapshot.data.docs.length;
 
         return PageView.builder(
           controller: controller,
           itemCount: totalPages,
+          physics: NeverScrollableScrollPhysics(),
+          onPageChanged: (index) {
+            setState(() {
+              currentPage = index;
+            });
+          },
           itemBuilder: (context, index) {
             DocumentSnapshot ds = snapshot.data.docs[index];
-            _targetText = ds["correct"];
+            _targetText = ds["sound"];
             return Container(
               padding: EdgeInsets.all(16),
               width: MediaQuery.of(context).size.width,
@@ -148,7 +187,7 @@ class _SpeechCardState extends State<SpeechCard> {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      ds["correct"],
+                      ds["sound"],
                       style: TextStyle(
                         color: Colors.black,
                         fontSize: 18.0,
@@ -267,12 +306,10 @@ class _SpeechCardState extends State<SpeechCard> {
                   ),
                 ),
                 SizedBox(width: 20.0),
-                if (_similarityScore >= 0.60)
+                if (_canProceed)
                   ElevatedButton(
-                    onPressed: () async {
-                      await completeLevel();
-                    },
-                    child: Text('Complete'),
+                    onPressed: _handleNextPage,
+                    child: Text(currentPage == totalPages - 1 ? 'Complete' : 'Next'),
                   ),
               ],
             ),
