@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:lingomaster_final/screens/profile.dart'; // Import the profile screen
+import 'package:lingomaster_final/utlis/color_utils.dart'; // For hexStringToColor function
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({Key? key}) : super(key: key);
@@ -12,7 +14,9 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   int currentXP = 0;
   int lvl1Prog = 0;
-  final int totalQuestions = 10; // Level 1 has 10 questions
+  int lvl2Prog = 0;
+  int lvl3Prog = 0;
+  final int totalQuestions = 5; // number of questions
 
   @override
   void initState() {
@@ -33,6 +37,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
         setState(() {
           currentXP = userDoc['exp'] ?? 0;
           lvl1Prog = userDoc['lvl1Prog'] ?? 0;
+          lvl2Prog = userDoc['lvl2Prog'] ?? 0;
+          lvl3Prog = userDoc['lvl3Prog'] ?? 0;
         });
       }
     }
@@ -40,47 +46,137 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    double progress = lvl1Prog / totalQuestions;
+    double progress1 = lvl1Prog / totalQuestions;
+    double progress2 = lvl2Prog / totalQuestions;
+    double progress3 = lvl3Prog / totalQuestions;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Dashboard"),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(20.0),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              hexStringToColor("CB2B93"),
+              hexStringToColor("5E6148"),
+              hexStringToColor("9546C4"),
+            ],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              "Your Current XP:",
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            // Header with dashboard text and profile icon
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
+              color: Colors.transparent,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    "Dashboard",
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.person, color: Colors.white),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) =>
+                                const ProfilePage()), // Redirect to profile page
+                      );
+                    },
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 10),
-            Text(
-              "$currentXP XP",
-              style: const TextStyle(fontSize: 18),
-            ),
-            const SizedBox(height: 30),
-            const Text(
-              "Level 1 Progress:",
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 10),
-            // Progress bar
-            LinearProgressIndicator(
-              value: progress,
-              backgroundColor: Colors.grey[300],
-              valueColor: const AlwaysStoppedAnimation<Color>(Colors.blue),
-              minHeight: 20,
-            ),
-            const SizedBox(height: 10),
-            // Display progress text (e.g., 5/10)
-            Text(
-              "$lvl1Prog / $totalQuestions",
-              style: const TextStyle(fontSize: 18),
+            Expanded(
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        "Your Current XP:",
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        "$currentXP XP",
+                        style: const TextStyle(
+                          fontSize: 18,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 30),
+                      // Level 1 progress box
+                      _buildProgressBox("Level 1 Progress", progress1, lvl1Prog),
+                      const SizedBox(height: 30),
+                      // Level 2 progress box
+                      _buildProgressBox("Level 2 Progress", progress2, lvl2Prog),
+                      const SizedBox(height: 30),
+                      // Level 3 progress box
+                      _buildProgressBox("Level 3 Progress", progress3, lvl3Prog),
+                    ],
+                  ),
+                ),
+              ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  // Helper function to build a progress box
+  Widget _buildProgressBox(String title, double progress, int currentProg) {
+    return Container(
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            spreadRadius: 2,
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.black,
+            ),
+          ),
+          const SizedBox(height: 10),
+          LinearProgressIndicator(
+            value: progress,
+            backgroundColor: Colors.grey[300],
+            valueColor: const AlwaysStoppedAnimation<Color>(Colors.blue),
+            minHeight: 20,
+          ),
+          const SizedBox(height: 10),
+          Text(
+            "$currentProg / $totalQuestions",
+            style: const TextStyle(fontSize: 18, color: Colors.black),
+          ),
+        ],
       ),
     );
   }
