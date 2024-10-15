@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:lingomaster_final/Admin/add_quiz.dart';
 
@@ -11,8 +10,8 @@ class AdminLogin extends StatefulWidget {
 }
 
 class _AdminLoginState extends State<AdminLogin> {
-  TextEditingController usernamecontroller = new TextEditingController();
-  TextEditingController userpasswordcontroller = new TextEditingController();
+  TextEditingController usernamecontroller = TextEditingController();
+  TextEditingController userpasswordcontroller = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -82,6 +81,7 @@ class _AdminLoginState extends State<AdminLogin> {
                                   if (value == null || value.isEmpty) {
                                     return 'Please Enter Username';
                                   }
+                                  return null;
                                 },
                                 decoration: InputDecoration(
                                     border: InputBorder.none,
@@ -111,6 +111,7 @@ class _AdminLoginState extends State<AdminLogin> {
                                   if (value == null || value.isEmpty) {
                                     return 'Please Enter Password';
                                   }
+                                  return null;
                                 },
                                 decoration: InputDecoration(
                                     border: InputBorder.none,
@@ -162,7 +163,7 @@ class _AdminLoginState extends State<AdminLogin> {
 
   LoginAdmin() {
     FirebaseFirestore.instance.collection("Admin").get().then((snapshot) {
-      snapshot.docs.forEach((result) {
+      for (var result in snapshot.docs) {
         if (result.data()['id'] != usernamecontroller.text.trim()) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
               content: Text(
@@ -180,7 +181,7 @@ class _AdminLoginState extends State<AdminLogin> {
           Route route = MaterialPageRoute(builder: (context) => AddQuiz());
           Navigator.pushReplacement(context, route);
         }
-      });
+      }
     });
   }
 }

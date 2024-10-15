@@ -1,7 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; // Add this
 import 'package:lingomaster_final/reusable__widgets/reusable%20widget.dart';
-import 'package:lingomaster_final/screens/home_page.dart';
 import 'package:lingomaster_final/screens/signin_screen.dart';
 import 'package:lingomaster_final/utlis/color_utils.dart';
 
@@ -66,12 +66,25 @@ class _SignUpScreen extends State<SignUpScreen> {
                           email: _emailTextContoller.text,
                           password: _passwordTextContoller.text)
                       .then((value) {
-                    print("Created Account Successfully");
-                    Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const SignInScreen()));
-                  }).onError((error, stackTrace) {
+                    // Save username, email, and initial exp to Firestore
+                    FirebaseFirestore.instance
+                        .collection('users')
+                        .doc(value.user?.uid) // Use the user UID
+                        .set({
+                          'username': _userNameTextContoller.text,
+                          'email': _emailTextContoller.text,
+                          'exp': 0, // Initialize exp to 0
+                        })
+                        .then((_) {
+                      print("User info saved to Firestore");
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const SignInScreen()));
+                    }).catchError((error) {
+                      print("Error saving user info to Firestore: ${error.toString()}");
+                    });
+                  }).catchError((error) {
                     print("Error ${error.toString()}");
                   });
                 })

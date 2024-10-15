@@ -14,7 +14,7 @@ class DatabaseMethods {
   }
 
   Future<Stream<QuerySnapshot>> getCategoryQuiz(String category) async {
-    return await FirebaseFirestore.instance.collection(category).snapshots();
+    return FirebaseFirestore.instance.collection(category).snapshots();
   }
 
   Future<void> addExpToUser(int exp) async {

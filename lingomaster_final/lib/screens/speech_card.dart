@@ -7,7 +7,7 @@ import 'package:string_similarity/string_similarity.dart';
 
 class SpeechCard extends StatefulWidget {
   final String category;
-  SpeechCard({required this.category});
+  const SpeechCard({super.key, required this.category});
 
   @override
   State<SpeechCard> createState() => _SpeechCardState();

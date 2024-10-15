@@ -1,14 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:lingomaster_final/Admin/add_quiz.dart';
-import 'package:lingomaster_final/Admin/admin_login.dart';
-import 'package:lingomaster_final/screens/home_page.dart';
-import 'package:lingomaster_final/screens/letters.dart';
-import 'package:lingomaster_final/screens/profile.dart';
-import 'package:lingomaster_final/screens/question.dart';
 import 'package:lingomaster_final/screens/signin_screen.dart';
-import 'package:lingomaster_final/screens/speech_recog.dart';
-import 'package:lingomaster_final/screens/speech_card.dart';
 
 String category = "Level 1";
 

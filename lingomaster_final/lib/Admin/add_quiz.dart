@@ -67,11 +67,11 @@ class _AddQuizState extends State<AddQuiz> {
     'Level 5',
   ];
 
-  TextEditingController option1controller = new TextEditingController();
-  TextEditingController option2controller = new TextEditingController();
-  TextEditingController option3controller = new TextEditingController();
-  TextEditingController option4controller = new TextEditingController();
-  TextEditingController correctcontroller = new TextEditingController();
+  TextEditingController option1controller = TextEditingController();
+  TextEditingController option2controller = TextEditingController();
+  TextEditingController option3controller = TextEditingController();
+  TextEditingController option4controller = TextEditingController();
+  TextEditingController correctcontroller = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -313,7 +313,7 @@ class _AddQuizState extends State<AddQuiz> {
                 padding: EdgeInsets.symmetric(vertical: 10.0),
                 width: MediaQuery.of(context).size.width,
                 decoration: BoxDecoration(
-                    color: Color(0xFFecec),
+                    color: Color(0x00ffecec),
                     borderRadius: BorderRadius.circular(10)),
                 child: DropdownButtonHideUnderline(
                     child: DropdownButton<String>(

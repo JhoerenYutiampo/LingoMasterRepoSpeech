@@ -4,6 +4,7 @@ import 'package:lingomaster_final/reusable__widgets/reusable%20widget.dart';
 import 'package:lingomaster_final/screens/home_page.dart';
 import 'package:lingomaster_final/screens/signup_screen.dart';
 import 'package:lingomaster_final/utlis/color_utils.dart';
+import 'package:lingomaster_final/screens/dashboard_screen.dart';
 
 class SignInScreen extends StatefulWidget {
   const SignInScreen({super.key});
@@ -66,7 +67,7 @@ class _SignInScreenState extends State<SignInScreen> {
                     print("Signed In Successfully");
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => HomePage()),
+                      MaterialPageRoute(builder: (context) => DashboardScreen()),
                     );
                   } on FirebaseAuthException catch (e) {
                     setState(() {

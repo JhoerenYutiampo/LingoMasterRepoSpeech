@@ -7,6 +7,8 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class Letters extends StatefulWidget {
+  const Letters({super.key});
+
   @override
   State<Letters> createState() => _LettersState();
 }
@@ -136,16 +138,12 @@ class _LettersState extends State<Letters> {
             if (media != null && media.isNotEmpty) {
               var data = await media.first.getFile();
               print("Media file data: $data");
-              if (data != null) {
-                setState(() {
-                  selectedMedia = data;
-                  print("Media file selected: ${selectedMedia!.path}");
-                });
-                _checkCorrectness();
-              } else {
-                print("Failed to get file from media picker");
-              }
-            } else {
+              setState(() {
+                selectedMedia = data;
+                print("Media file selected: ${selectedMedia!.path}");
+              });
+              _checkCorrectness();
+                        } else {
               print("No media selected");
             }
           } catch (e) {
