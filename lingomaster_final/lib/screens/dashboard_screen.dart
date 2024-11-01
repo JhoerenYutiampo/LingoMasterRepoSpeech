@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:lingomaster_final/screens/profile.dart'; // Import the profile screen
-import 'package:lingomaster_final/utlis/color_utils.dart'; // For hexStringToColor function
+import 'package:lingomaster_final/screens/profile.dart';
+import 'package:lingomaster_final/screens/level_detail_screen.dart';
+import 'package:lingomaster_final/utlis/color_utils.dart'; 
 
 class DashboardScreen extends StatefulWidget {
-  const DashboardScreen({Key? key}) : super(key: key);
+  const DashboardScreen({super.key});
 
   @override
   _DashboardScreenState createState() => _DashboardScreenState();
@@ -119,14 +120,60 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ),
                       ),
                       const SizedBox(height: 30),
-                      // Level 1 progress box
-                      _buildProgressBox("Level 1 Progress", progress1, lvl1Prog),
-                      const SizedBox(height: 30),
-                      // Level 2 progress box
-                      _buildProgressBox("Level 2 Progress", progress2, lvl2Prog),
-                      const SizedBox(height: 30),
-                      // Level 3 progress box
-                      _buildProgressBox("Level 3 Progress", progress3, lvl3Prog),
+                      // GestureDetector for Level 1
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => LevelDetailScreen(
+                                levelTitle: "Level 1: Characters",
+                                collectionName: "characters",
+                                currentProgress: lvl1Prog,
+                                totalQuestions: totalQuestions,
+                              ),
+                            ),
+                          );
+                        },
+                        child: _buildProgressBox("Level 1 Progress", progress1, lvl1Prog),
+                      ),
+
+                      // GestureDetector for Level 2
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => LevelDetailScreen(
+                                levelTitle: "Level 2: Words",
+                                collectionName: "words",
+                                currentProgress: lvl2Prog,
+                                totalQuestions: totalQuestions,
+                              ),
+                            ),
+                          );
+                        },
+                        child: _buildProgressBox("Level 2 Progress", progress2, lvl2Prog),
+                      ),
+
+                      // GestureDetector for Level 3
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => LevelDetailScreen(
+                                levelTitle: "Level 3: Phrases",
+                                collectionName: "phrases",
+                                currentProgress: lvl3Prog,
+                                totalQuestions: totalQuestions,
+                              ),
+                            ),
+                          );
+                        },
+                        child: _buildProgressBox("Level 3 Progress", progress3, lvl3Prog),
+                      ),
+
                     ],
                   ),
                 ),
@@ -180,4 +227,5 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
     );
   }
+  
 }
