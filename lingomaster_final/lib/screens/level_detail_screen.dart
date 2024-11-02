@@ -134,23 +134,14 @@ class LevelDetailScreen extends StatelessWidget {
                                 IconButton(
                                   icon: const Icon(Icons.edit, color: Colors.black),
                                   onPressed: () {
-                                    // Navigate to DrawScreen and pass the correct symbol image path
-                                    if (symbolImage != null) {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => DrawScreen(
-                                            targetImagePath: symbolImage, // URL of the symbol image from Firebase
-                                          ),
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => DrawScreen(
+                                          targetHiragana: doc['hiragana'], // Pass hiragana instead of image URL
                                         ),
-                                      );
-                                    } else {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(
-                                          content: Text("No symbol image available"),
-                                        ),
-                                      );
-                                    }
+                                      ),
+                                    );
                                   },
                                 ),
                                 IconButton(
