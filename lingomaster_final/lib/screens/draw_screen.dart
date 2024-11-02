@@ -29,6 +29,9 @@ class _DrawScreenState extends State<DrawScreen> {
   );
   File? selectedMedia;
   double _opacity = 0.3;
+  bool _showTrace = false;
+  bool _isPracticeMode = false;
+  
 
   // Get the local storage directory path
   Future<String> get _localPath async {
@@ -317,6 +320,69 @@ class _DrawScreenState extends State<DrawScreen> {
     );
   }
 
+  Future<void> _showPracticeModeDialog() async {
+    return showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Notice!'),
+          content: const Text(
+            'Practice only gives half the amount of experience points and will not be considered as level complete.',
+            style: TextStyle(fontSize: 16),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  _showTrace = true;
+                  _isPracticeMode = true;
+                });
+                Navigator.of(context).pop();
+              },
+              child: const Text('Proceed'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _showCameraPermissionDialog() async {
+    return showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Gallery Access'),
+          content: const Text(
+            'This app needs access to your gallery to upload images. Would you like to proceed?',
+            style: TextStyle(fontSize: 16),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.of(context).pop();
+                await _pickImage();
+              },
+              child: const Text('Allow'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -324,62 +390,96 @@ class _DrawScreenState extends State<DrawScreen> {
         title: Text("Trace: ${widget.targetHiragana}"),
         backgroundColor: Colors.purple,
       ),
-      body: Column(
+      body: Stack(
         children: [
-          Container(
-            margin: const EdgeInsets.all(15),
-            height: 300,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(15),
-              border: Border.all(color: Colors.black12, width: 2),
-            ),
-            child: Stack(
-              children: [
-                _buildTracingTemplate(),
-                Signature(
-                  controller: _controller,
-                  width: 300,
-                  height: 300,
-                  backgroundColor: Colors.transparent, // Changed to transparent
-                ),
-              ],
-            ),
-          ),
-          const Text(
-            "Adjust template opacity:",
-            style: TextStyle(fontSize: 16),
-          ),
-          _buildOpacityControls(),
-          const SizedBox(height: 10),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          Column(
             children: [
-              ElevatedButton(
-                onPressed: _undoDrawing,
-                child: const Text("Undo"),
+              Container(
+                margin: const EdgeInsets.all(15),
+                height: 300,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(15),
+                  border: Border.all(color: Colors.black12, width: 2),
+                ),
+                child: Stack(
+                  children: [
+                    if (_showTrace) _buildTracingTemplate(),
+                    Signature(
+                      controller: _controller,
+                      width: 300,
+                      height: 300,
+                      backgroundColor: Colors.transparent,
+                    ),
+                  ],
+                ),
               ),
-              ElevatedButton(
-                onPressed: _clearDrawing,
-                child: const Text("Clear"),
+              if (!_showTrace) ...[
+                ElevatedButton(
+                  onPressed: _showPracticeModeDialog,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 40,
+                      vertical: 15,
+                    ),
+                  ),
+                  child: const Text(
+                    "Practice",
+                    style: TextStyle(fontSize: 18),
+                  ),
+                ),
+                const SizedBox(height: 20),
+              ],
+              if (_showTrace) ...[
+                const Text(
+                  "Adjust template opacity:",
+                  style: TextStyle(fontSize: 16),
+                ),
+                _buildOpacityControls(),
+              ],
+              const SizedBox(height: 10),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  ElevatedButton(
+                    onPressed: _undoDrawing,
+                    child: const Text("Undo"),
+                  ),
+                  ElevatedButton(
+                    onPressed: _clearDrawing,
+                    child: const Text("Clear"),
+                  ),
+                ],
               ),
+              const SizedBox(height: 20),
               ElevatedButton(
-                onPressed: _pickImage,
-                child: const Text("Upload Image"),
+                onPressed: _handleSubmit,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 40,
+                    vertical: 15,
+                  ),
+                ),
+                child: const Text(
+                  "Submit",
+                  style: TextStyle(fontSize: 18),
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: _handleSubmit,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green,
-              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
-            ),
-            child: const Text(
-              "Submit",
-              style: TextStyle(fontSize: 18),
+          Positioned(
+            bottom: 16,
+            right: 16,
+            child: FloatingActionButton(
+              onPressed: _showCameraPermissionDialog,
+              backgroundColor: Colors.purple,
+              child: const Icon(
+                Icons.camera_alt,
+                color: Colors.white,
+              ),
             ),
           ),
         ],
