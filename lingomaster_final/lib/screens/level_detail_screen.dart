@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:lingomaster_final/screens/draw_screen.dart';
+import 'package:lingomaster_final/screens/voice_screen.dart';
 
 class LevelDetailScreen extends StatelessWidget {
   final String levelTitle;
@@ -147,7 +148,16 @@ class LevelDetailScreen extends StatelessWidget {
                                 IconButton(
                                   icon: const Icon(Icons.mic, color: Colors.black),
                                   onPressed: () {
-                                    // Logic for using microphone (if required)
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => VoiceScreen(
+                                          hiragana: doc['hiragana'],
+                                          english: doc['english'],
+                                          audio: doc['audio'],
+                                        ),
+                                      ),
+                                    );
                                   },
                                 ),
                               ],
