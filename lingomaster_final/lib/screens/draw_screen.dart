@@ -13,7 +13,7 @@ class DrawScreen extends StatefulWidget {
   final String targetHiragana;
 
   const DrawScreen({
-    super.key, 
+    super.key,
     required this.targetHiragana,
   });
 
@@ -31,7 +31,6 @@ class _DrawScreenState extends State<DrawScreen> {
   double _opacity = 0.3;
   bool _showTrace = false;
   bool _isPracticeMode = false;
-  
 
   // Get the local storage directory path
   Future<String> get _localPath async {
@@ -55,7 +54,7 @@ class _DrawScreenState extends State<DrawScreen> {
   Future<File> _processImage(File inputFile) async {
     final bytes = await inputFile.readAsBytes();
     var image = img.decodeImage(bytes);
-    
+
     if (image == null) return inputFile;
 
     // Resize image if needed
@@ -69,12 +68,13 @@ class _DrawScreenState extends State<DrawScreen> {
     final path = await _localPath;
     final processedFile = File('$path/processed_image.png');
     await processedFile.writeAsBytes(img.encodePng(image));
-    
+
     return processedFile;
   }
 
   Future<double> _calculateScore(String? extractedText) {
-    if (extractedText == null || extractedText.isEmpty) return Future.value(0.0);
+    if (extractedText == null || extractedText.isEmpty)
+      return Future.value(0.0);
 
     // Convert both strings to the same case and remove whitespace
     String normalizedExtracted = extractedText.trim().toLowerCase();
@@ -109,14 +109,15 @@ class _DrawScreenState extends State<DrawScreen> {
     try {
       // Process the image first
       File processedFile = await _processImage(file);
-      
+
       final textRecognizer = TextRecognizer(
         script: TextRecognitionScript.japanese,
       );
-      
+
       final InputImage inputImage = InputImage.fromFile(processedFile);
-      final RecognizedText recognizedText = await textRecognizer.processImage(inputImage);
-      
+      final RecognizedText recognizedText =
+          await textRecognizer.processImage(inputImage);
+
       textRecognizer.close();
 
       // Combine all recognized text blocks
@@ -144,7 +145,7 @@ class _DrawScreenState extends State<DrawScreen> {
       final path = await _localPath;
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       final localFile = File('$path/drawn_image_$timestamp.png');
-      
+
       try {
         await localFile.writeAsBytes(bytes.buffer.asUint8List());
 
@@ -153,7 +154,7 @@ class _DrawScreenState extends State<DrawScreen> {
         bool passed = score >= 40.0;
 
         if (!mounted) return;
-        
+
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
@@ -218,23 +219,23 @@ class _DrawScreenState extends State<DrawScreen> {
     }
   }
 
-
   Future<void> _pickImage() async {
     try {
       List<MediaFile>? media = await GalleryPicker.pickMedia(
         context: context,
         singleMedia: true,
       );
-      
+
       if (media != null && media.isNotEmpty) {
         var file = await media.first.getFile();
         setState(() {
           selectedMedia = file;
         });
-        
+
         // Check if the uploaded image contains the correct character
         String? extractedText = await _extractText(selectedMedia!);
-        if (extractedText != null && extractedText.contains(widget.targetHiragana)) {
+        if (extractedText != null &&
+            extractedText.contains(widget.targetHiragana)) {
           showDialog(
             context: context,
             builder: (context) => AlertDialog(
@@ -260,7 +261,8 @@ class _DrawScreenState extends State<DrawScreen> {
             context: context,
             builder: (context) => AlertDialog(
               title: const Text("Try Again"),
-              content: const Text("Character not recognized. Please try again."),
+              content:
+                  const Text("Character not recognized. Please try again."),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(),
@@ -298,7 +300,8 @@ class _DrawScreenState extends State<DrawScreen> {
           style: TextStyle(
             fontSize: 200,
             color: Colors.grey.withOpacity(_opacity),
-            fontFamily: 'NotoSansJP', // Make sure to add this font to pubspec.yaml
+            fontFamily:
+                'NotoSansJP', // Make sure to add this font to pubspec.yaml
           ),
         ),
       ),

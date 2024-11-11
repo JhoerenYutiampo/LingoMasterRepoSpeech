@@ -3,7 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:lingomaster_final/screens/profile.dart';
 import 'package:lingomaster_final/screens/level_detail_screen.dart';
-import 'package:lingomaster_final/utlis/color_utils.dart'; 
+import 'package:lingomaster_final/utlis/color_utils.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -17,7 +17,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   int lvl1Prog = 0;
   int lvl2Prog = 0;
   int lvl3Prog = 0;
-  final int totalQuestions = 5; // number of questions
+  final int totalQuestions = 5;
 
   @override
   void initState() {
@@ -25,7 +25,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     fetchUserData();
   }
 
-  // Fetch user data from Firestore
   void fetchUserData() async {
     User? user = FirebaseAuth.instance.currentUser;
     if (user != null) {
@@ -65,31 +64,55 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header with dashboard text and profile icon
+            // Updated Header Section
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
-              color: Colors.transparent,
+              padding: const EdgeInsets.only(
+                  left: 20, right: 20, top: 60, bottom: 30),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.purple, Colors.deepPurpleAccent],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(30),
+                  bottomRight: Radius.circular(30),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black26,
+                    blurRadius: 10,
+                    offset: Offset(0, 4),
+                  ),
+                ],
+              ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                  Text(
                     "Dashboard",
-                    style: TextStyle(
-                      fontSize: 24,
+                    style: const TextStyle(
+                      fontSize: 32,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
+                      shadows: [
+                        Shadow(
+                          color: Colors.black38,
+                          offset: Offset(1, 2),
+                          blurRadius: 4,
+                        ),
+                      ],
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.person, color: Colors.white),
+                    icon:
+                        const Icon(Icons.person, color: Colors.white, size: 30),
                     onPressed: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                            builder: (context) =>
-                                const ProfilePage()), // Redirect to profile page
+                            builder: (context) => const ProfilePage()),
                       );
                     },
                   ),
@@ -103,24 +126,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         "Your Current XP:",
                         style: TextStyle(
-                          fontSize: 20,
+                          fontSize: 22,
                           fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                          color: Colors.white.withOpacity(0.9),
                         ),
                       ),
                       const SizedBox(height: 10),
                       Text(
                         "$currentXP XP",
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 18,
-                          color: Colors.white,
+                          color: Colors.white.withOpacity(0.8),
                         ),
                       ),
                       const SizedBox(height: 30),
-                      // GestureDetector for Level 1
+
+                      // Level 1 Progress
                       GestureDetector(
                         onTap: () {
                           Navigator.push(
@@ -135,10 +159,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             ),
                           );
                         },
-                        child: _buildProgressBox("Level 1 Progress", progress1, lvl1Prog),
+                        child: _buildProgressBox(
+                            "Level 1 Progress", progress1, lvl1Prog),
                       ),
+                      const SizedBox(height: 20),
 
-                      // GestureDetector for Level 2
+                      // Level 2 Progress
                       GestureDetector(
                         onTap: () {
                           Navigator.push(
@@ -153,10 +179,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             ),
                           );
                         },
-                        child: _buildProgressBox("Level 2 Progress", progress2, lvl2Prog),
+                        child: _buildProgressBox(
+                            "Level 2 Progress", progress2, lvl2Prog),
                       ),
+                      const SizedBox(height: 20),
 
-                      // GestureDetector for Level 3
+                      // Level 3 Progress
                       GestureDetector(
                         onTap: () {
                           Navigator.push(
@@ -171,9 +199,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             ),
                           );
                         },
-                        child: _buildProgressBox("Level 3 Progress", progress3, lvl3Prog),
+                        child: _buildProgressBox(
+                            "Level 3 Progress", progress3, lvl3Prog),
                       ),
-
                     ],
                   ),
                 ),
@@ -188,15 +216,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
   // Helper function to build a progress box
   Widget _buildProgressBox(String title, double progress, int currentProg) {
     return Container(
-      padding: const EdgeInsets.all(15),
+      padding: const EdgeInsets.all(20),
+      margin: const EdgeInsets.symmetric(vertical: 5),
       decoration: BoxDecoration(
-        color: Colors.white,
         borderRadius: BorderRadius.circular(15),
+        gradient: LinearGradient(
+          colors: [Colors.white, Colors.white.withOpacity(0.9)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.1),
             blurRadius: 10,
             spreadRadius: 2,
+            offset: Offset(5, 5),
           ),
         ],
       ),
@@ -205,27 +239,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
         children: [
           Text(
             title,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: Colors.black,
+              color: Colors.black87,
             ),
           ),
           const SizedBox(height: 10),
           LinearProgressIndicator(
             value: progress,
             backgroundColor: Colors.grey[300],
-            valueColor: const AlwaysStoppedAnimation<Color>(Colors.blue),
-            minHeight: 20,
+            valueColor: AlwaysStoppedAnimation<Color>(
+                Colors.blueAccent.withOpacity(0.7)),
+            minHeight: 18,
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           Text(
             "$currentProg / $totalQuestions",
-            style: const TextStyle(fontSize: 18, color: Colors.black),
+            style: TextStyle(fontSize: 16, color: Colors.black54),
           ),
         ],
       ),
     );
   }
-  
 }

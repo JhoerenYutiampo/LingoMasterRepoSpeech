@@ -22,22 +22,64 @@ class LevelDetailScreen extends StatelessWidget {
     double progress = currentProgress / totalQuestions;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(levelTitle),
-        backgroundColor: Colors.purple,
+      // Custom AppBar for aesthetic design
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(
+            120), // Increased height for a more spacious header
+        child: AppBar(
+          flexibleSpace: Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.purple, Colors.deepPurpleAccent],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(30),
+                bottomRight: Radius.circular(30),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black26,
+                  blurRadius: 10,
+                  offset: Offset(0, 4),
+                ),
+              ],
+            ),
+          ),
+          backgroundColor:
+              Colors.transparent, // Transparent background to show gradient
+          elevation: 0,
+          centerTitle: true,
+          title: Text(
+            levelTitle,
+            style: const TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+              shadows: [
+                Shadow(
+                  color: Colors.black26,
+                  offset: Offset(1, 2),
+                  blurRadius: 4,
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
       body: Column(
         children: [
           // Progress box at the top
           Container(
-            padding: const EdgeInsets.all(15),
+            padding: const EdgeInsets.all(20),
             margin: const EdgeInsets.all(15),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(15),
+              borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Colors.black.withOpacity(0.15),
                   blurRadius: 10,
                   spreadRadius: 2,
                 ),
@@ -49,30 +91,35 @@ class LevelDetailScreen extends StatelessWidget {
                 Text(
                   "$levelTitle Progress",
                   style: const TextStyle(
-                    fontSize: 20,
+                    fontSize: 24,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black,
+                    color: Colors.black87,
                   ),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
                 LinearProgressIndicator(
                   value: progress,
                   backgroundColor: Colors.grey[300],
-                  valueColor: const AlwaysStoppedAnimation<Color>(Colors.blue),
-                  minHeight: 20,
+                  valueColor:
+                      const AlwaysStoppedAnimation<Color>(Colors.blueAccent),
+                  minHeight: 15,
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
                 Text(
                   "$currentProgress / $totalQuestions",
-                  style: const TextStyle(fontSize: 18, color: Colors.black),
+                  style: const TextStyle(
+                    fontSize: 18,
+                    color: Colors.black54,
+                  ),
                 ),
               ],
             ),
           ),
-          
+
           Expanded(
             child: FutureBuilder<QuerySnapshot>(
-              future: FirebaseFirestore.instance.collection(collectionName).get(),
+              future:
+                  FirebaseFirestore.instance.collection(collectionName).get(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
@@ -89,21 +136,18 @@ class LevelDetailScreen extends StatelessWidget {
                 return ListView(
                   padding: const EdgeInsets.all(16),
                   children: snapshot.data!.docs.map((doc) {
-                    var symbol = doc['english']; // field for displaying items on questions
+                    var symbol = doc['english'];
                     final data = doc.data() as Map<String, dynamic>?;
-                    print(data); //debug print - remove later
-                    var symbolImage = data != null && data['image'] != null 
-                        ? data['image'] as String 
+                    var symbolImage = data != null && data['image'] != null
+                        ? data['image'] as String
                         : null;
-
-
 
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 20),
                       child: Container(
-                        height: 100, 
-                        width: 100,
-                        padding: const EdgeInsets.all(10),
+                        height: 100,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 15, vertical: 10),
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(15),
@@ -111,7 +155,7 @@ class LevelDetailScreen extends StatelessWidget {
                             BoxShadow(
                               color: Colors.black.withOpacity(0.1),
                               blurRadius: 10,
-                              spreadRadius: 2,
+                              spreadRadius: 3,
                             ),
                           ],
                         ),
@@ -124,8 +168,8 @@ class LevelDetailScreen extends StatelessWidget {
                                 symbol,
                                 style: const TextStyle(
                                   fontSize: 28,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.black,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.black87,
                                 ),
                               ),
                             ),
@@ -133,20 +177,22 @@ class LevelDetailScreen extends StatelessWidget {
                             Row(
                               children: [
                                 IconButton(
-                                  icon: const Icon(Icons.edit, color: Colors.black),
+                                  icon: const Icon(Icons.edit,
+                                      color: Colors.indigo),
                                   onPressed: () {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
                                         builder: (context) => DrawScreen(
-                                          targetHiragana: doc['hiragana'], // Pass hiragana instead of image URL
+                                          targetHiragana: doc['hiragana'],
                                         ),
                                       ),
                                     );
                                   },
                                 ),
                                 IconButton(
-                                  icon: const Icon(Icons.mic, color: Colors.black),
+                                  icon: const Icon(Icons.mic,
+                                      color: Colors.redAccent),
                                   onPressed: () {
                                     Navigator.push(
                                       context,
