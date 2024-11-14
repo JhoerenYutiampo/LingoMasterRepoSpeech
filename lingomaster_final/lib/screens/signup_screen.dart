@@ -74,10 +74,16 @@ class _SignUpScreen extends State<SignUpScreen> {
                           'username': _userNameTextContoller.text,
                           'email': _emailTextContoller.text,
                           'exp': 0, // Initialize exp to 0
-                          'onBoard': false, //false for first time creating the account
-                          'lvl1Prog': 0, //Initialize progress for lvl 1
-                          'lvl2Prog': 0, //Initialize progress for lvl 2
-                          'lvl3Prog': 0, //Initialize progress for lvl 3
+                          'hearts': 0, // Initialize hearts to 0
+                          'isAdmin': false, // Initialize isAdmin to false
+                          'currentLevel': 0, // Initialize currentLevel to 0
+                          'onBoarded': false, // false for first time creating the account
+                          'lvl1ProgVoice': [], // Initialize lvl1ProgVoice as an empty array
+                          'lvl1ProgWritten': [], // Initialize lvl1ProgWritten as an empty array
+                          'lvl2ProgVoice': [], // Initialize lvl2ProgVoice as an empty array
+                          'lvl2ProgWritten': [], // Initialize lvl2ProgWritten as an empty array
+                          'lvl3ProgVoice': [], // Initialize lvl3ProgVoice as an empty array
+                          'lvl3ProgWritten': [], // Initialize lvl3ProgWritten as an empty array
                         })
                         .then((_) {
                       print("User info saved to Firestore");

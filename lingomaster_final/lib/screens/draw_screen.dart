@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:lingomaster_final/screens/level_detail_screen.dart';
 import 'package:lingomaster_final/service/database.dart';
 import 'package:signature/signature.dart';
 import 'package:gallery_picker/gallery_picker.dart';
@@ -29,7 +30,6 @@ class DrawScreen extends StatefulWidget {
 }
 
 class _DrawScreenState extends State<DrawScreen> {
-
   final DatabaseMethods _databaseMethods = DatabaseMethods();
   final Random _random = Random();
 
@@ -43,7 +43,6 @@ class _DrawScreenState extends State<DrawScreen> {
   bool _showTrace = false;
   bool _isPracticeMode = false;
 
-  // Get the local storage directory path
   Future<String> get _localPath async {
     final directory = await getApplicationDocumentsDirectory();
     return directory.path;
@@ -61,7 +60,6 @@ class _DrawScreenState extends State<DrawScreen> {
     }
   }
 
-  // determine level from collection name
   int _getLevelFromCollection() {
     switch (widget.collectionName) {
       case 'characters':
@@ -71,25 +69,22 @@ class _DrawScreenState extends State<DrawScreen> {
       case 'phrases':
         return 3;
       default:
-        return 1; // Default to level 1 if collection name doesn't match
+        return 1;
     }
   }
 
-  // Process image before text recognition
   Future<File> _processImage(File inputFile) async {
     final bytes = await inputFile.readAsBytes();
     var image = img.decodeImage(bytes);
 
     if (image == null) return inputFile;
 
-    // Resize image if needed
     if (image.width < 200 || image.height < 200) {
       image = img.copyResize(image, width: 400, height: 400);
     } else if (image.width > 1000 || image.height > 1000) {
       image = img.copyResize(image, width: 800, height: 800);
     }
 
-    // Save to local storage instead of temp directory
     final path = await _localPath;
     final processedFile = File('$path/processed_image.png');
     await processedFile.writeAsBytes(img.encodePng(image));
@@ -97,42 +92,8 @@ class _DrawScreenState extends State<DrawScreen> {
     return processedFile;
   }
 
-  Future<double> _calculateScore(String? extractedText) {
-    if (extractedText == null || extractedText.isEmpty)
-      return Future.value(0.0);
-
-    // Convert both strings to the same case and remove whitespace
-    String normalizedExtracted = extractedText.trim().toLowerCase();
-    String normalizedTarget = widget.targetHiragana.trim().toLowerCase();
-
-    // Direct match
-    if (normalizedExtracted.contains(normalizedTarget)) {
-      return Future.value(100.0);
-    }
-
-    // Check if the target character appears in any form
-    // This helps with slight variations in recognition
-    List<String> variations = [
-      normalizedTarget,
-      // Add common variations or misrecognitions of hiragana characters
-      // This can be expanded based on observed patterns
-    ];
-
-    for (String variation in variations) {
-      if (normalizedExtracted.contains(variation)) {
-        return Future.value(80.0); // High score for variation matches
-      }
-    }
-
-    // Calculate partial matches
-    // If the recognized text contains some similar characters
-    // This threshold can be adjusted based on your needs
-    return Future.value(40.0);
-  }
-
   Future<String?> _extractText(File file) async {
     try {
-      // Process the image first
       File processedFile = await _processImage(file);
 
       final textRecognizer = TextRecognizer(
@@ -145,7 +106,6 @@ class _DrawScreenState extends State<DrawScreen> {
 
       textRecognizer.close();
 
-      // Combine all recognized text blocks
       String allText = recognizedText.blocks
           .map((block) => block.text.trim())
           .join(' ')
@@ -174,113 +134,36 @@ class _DrawScreenState extends State<DrawScreen> {
         await localFile.writeAsBytes(bytes.buffer.asUint8List());
 
         String? extractedText = await _extractText(localFile);
-        double score = await _calculateScore(extractedText);
-        bool passed = score >= 40.0;
+        bool passed = extractedText == widget.targetHiragana;
 
         int level = _getLevelFromCollection();
 
         if (passed) {
-          // Modified to use new database method with level and type
           await _databaseMethods.addCompletedQuestion(
             widget.questionId,
             level,
-            'written'
+            'written',
           );
-          
+
           int randomBonus = _random.nextInt(10) + 1;
           int baseExp = _isPracticeMode ? 10 : 20;
           int totalExp = baseExp + randomBonus;
           await _databaseMethods.modifyUserExp(totalExp);
+
+          _showSuccessDialog(localFile, passed);
         } else {
           if (!_isPracticeMode) {
-            await _databaseMethods.modifyUserHearts(-1);
+            //await _databaseMethods.modifyUserHearts(-1);
           }
+          _showFailureDialog(localFile, passed);
         }
 
         if (!mounted) return;
-
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text("Your Score"),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                "Score: ${score.toStringAsFixed(1)}%",
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: passed ? Colors.green : Colors.red,
-                ),
-              ),
-              Text(
-                passed ? "Good job!" : "Keep Practicing!",
-                style: TextStyle(
-                  fontSize: 18,
-                  color: passed ? Colors.green : Colors.red,
-                ),
-              ),
-              if (passed) ...[
-                const SizedBox(height: 10),
-                const Text(
-                  "XP Added!",
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.blue,
-                  ),
-                ),
-              ] else if (!_isPracticeMode) ...[
-                const SizedBox(height: 10),
-                const Text(
-                  "Lost 1 Heart",
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.red,
-                  ),
-                ),
-              ],
-              if (extractedText != null && extractedText.isNotEmpty) ...[
-                const SizedBox(height: 10),
-                Text(
-                  "Recognized text: $extractedText",
-                  style: const TextStyle(fontSize: 16),
-                ),
-              ],
-              const SizedBox(height: 20),
-              const Text("Your Drawing:"),
-              SizedBox(
-                height: 100,
-                width: 100,
-                child: Image.file(localFile),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                "Target Character: ${widget.targetHiragana}",
-                style: const TextStyle(fontSize: 24),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                _controller.clear();
-                Navigator.of(context).pop();
-              },
-              child: const Text("Try Again"),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text("Continue"),
-            ),
-          ],
-        ),
-      );
-    } catch (e) {
-      print('Error saving or processing image: $e');
+      } catch (e) {
+        print('Error saving or processing image: $e');
+      }
     }
   }
-}
 
   Future<void> _pickImage() async {
     try {
@@ -295,45 +178,23 @@ class _DrawScreenState extends State<DrawScreen> {
           selectedMedia = file;
         });
 
-        // Check if the uploaded image contains the correct character
         String? extractedText = await _extractText(selectedMedia!);
-        if (extractedText != null &&
-            extractedText.contains(widget.targetHiragana)) {
-          showDialog(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: const Text("Success!"),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text("Character recognized successfully!"),
-                  const SizedBox(height: 10),
-                  Image.file(selectedMedia!, height: 100),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text("Continue"),
-                ),
-              ],
-            ),
+        if (extractedText != null && extractedText == widget.targetHiragana) {
+          int level = _getLevelFromCollection();
+          await _databaseMethods.addCompletedQuestion(
+            widget.questionId,
+            level,
+            'written'
           );
+
+          int randomBonus = _random.nextInt(10) + 1;
+          int baseExp = _isPracticeMode ? 10 : 20;
+          int totalExp = baseExp + randomBonus;
+          await _databaseMethods.modifyUserExp(totalExp);
+
+          _showSuccessDialog(selectedMedia!, true);
         } else {
-          showDialog(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: const Text("Try Again"),
-              content:
-                  const Text("Character not recognized. Please try again."),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text("OK"),
-                ),
-              ],
-            ),
-          );
+          _showFailureDialog(selectedMedia!, false);
         }
       }
     } catch (e) {
@@ -356,22 +217,22 @@ class _DrawScreenState extends State<DrawScreen> {
   }
 
   Widget _buildTracingTemplate() {
-  return Positioned.fill(
-    child: Center(
-      child: FittedBox(
-        fit: BoxFit.scaleDown, // Ensures the text scales down to fit
-        child: Text(
-          widget.targetHiragana,
-          style: TextStyle(
-            fontSize: 200, // Maximum font size, will scale down as needed
-            color: Colors.grey.withOpacity(_opacity),
-            fontFamily: 'NotoSansJP', // Ensure this font is included in pubspec.yaml
+    return Positioned.fill(
+      child: Center(
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            widget.targetHiragana,
+            style: TextStyle(
+              fontSize: 200,
+              color: Colors.grey.withOpacity(_opacity),
+              fontFamily: 'NotoSansJP',
+            ),
           ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   Widget _buildOpacityControls() {
     return Slider(
@@ -389,46 +250,45 @@ class _DrawScreenState extends State<DrawScreen> {
   }
 
   Future<void> _showPracticeModeDialog() async {
-  return showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      return AlertDialog(
-        title: const Text('Practice Mode'),
-        content: const Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Practice mode will be enabled:',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+    return showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Practice Mode'),
+          content: const Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Practice mode will be enabled:',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 10),
+              Text('• Earn less XP for correct answers'),
+              Text('• Template tracing will be enabled'),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Cancel'),
             ),
-            SizedBox(height: 10),
-            Text('• Earn less XP for correct answers'),
-            Text('• Template tracing will be enabled'),
-            Text('• No hearts will be lost on failure'),
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  _showTrace = true;
+                  _isPracticeMode = true;
+                });
+                Navigator.of(context).pop();
+              },
+              child: const Text('Proceed'),
+            ),
           ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              setState(() {
-                _showTrace = true;
-                _isPracticeMode = true;
-              });
-              Navigator.of(context).pop();
-            },
-            child: const Text('Proceed'),
-          ),
-        ],
-      );
-    },
-  );
-}
+        );
+      },
+    );
+  }
 
   Future<void> _showCameraPermissionDialog() async {
     return showDialog(
@@ -457,6 +317,49 @@ class _DrawScreenState extends State<DrawScreen> {
           ],
         );
       },
+    );
+  }
+
+  void _showSuccessDialog(File image, bool passed) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Success!"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text("Character recognized successfully!"),
+            const SizedBox(height: 10),
+            Image.file(image, height: 100),
+            const Text("Gained XP"),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.pop(context);
+            },
+            child: const Text("Continue"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showFailureDialog(File image, bool passed) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Try Again"),
+        content: const Text("Character not recognized. Please try again."),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text("OK"),
+          ),
+        ],
+      ),
     );
   }
 

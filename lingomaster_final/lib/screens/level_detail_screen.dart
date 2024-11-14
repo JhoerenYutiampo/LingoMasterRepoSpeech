@@ -125,7 +125,7 @@ class _LevelDetailScreenState extends State<LevelDetailScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "${widget.levelTitle} Progress",
+                  "Progress",
                   style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
