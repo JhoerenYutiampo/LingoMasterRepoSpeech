@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:lingomaster_final/screens/profile.dart';
 import 'package:lingomaster_final/screens/level_detail_screen.dart';
+import 'package:lingomaster_final/screens/assessment_screen.dart'; // Import the AssessmentScreen
 import 'package:lingomaster_final/service/database.dart';
 import 'package:lingomaster_final/utlis/color_utils.dart';
 
@@ -30,12 +31,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   void fetchTotalQuestions() async {
     // Get the number of documents and multiply by 2 for written and voice
-    int charactersTotal = await _databaseMethods.getTotalQuestionsForLevel('characters');
+    int charactersTotal =
+        await _databaseMethods.getTotalQuestionsForLevel('characters');
     int wordsTotal = await _databaseMethods.getTotalQuestionsForLevel('words');
-    int phrasesTotal = await _databaseMethods.getTotalQuestionsForLevel('phrases');
+    int phrasesTotal =
+        await _databaseMethods.getTotalQuestionsForLevel('phrases');
 
     setState(() {
-      totalQuestions['characters'] = charactersTotal * 2; // Multiply by 2 for written and voice
+      totalQuestions['characters'] =
+          charactersTotal * 2; // Multiply by 2 for written and voice
       totalQuestions['words'] = wordsTotal * 2;
       totalQuestions['phrases'] = phrasesTotal * 2;
     });
@@ -44,12 +48,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   void fetchCompletedQuestions() async {
     // Fetch completed questions for each level (both written and voice)
-    List<String> lvl1Written = await _databaseMethods.getCompletedQuestions(1, 'written');
-    List<String> lvl1Voice = await _databaseMethods.getCompletedQuestions(1, 'voice');
-    List<String> lvl2Written = await _databaseMethods.getCompletedQuestions(2, 'written');
-    List<String> lvl2Voice = await _databaseMethods.getCompletedQuestions(2, 'voice');
-    List<String> lvl3Written = await _databaseMethods.getCompletedQuestions(3, 'written');
-    List<String> lvl3Voice = await _databaseMethods.getCompletedQuestions(3, 'voice');
+    List<String> lvl1Written =
+        await _databaseMethods.getCompletedQuestions(1, 'written');
+    List<String> lvl1Voice =
+        await _databaseMethods.getCompletedQuestions(1, 'voice');
+    List<String> lvl2Written =
+        await _databaseMethods.getCompletedQuestions(2, 'written');
+    List<String> lvl2Voice =
+        await _databaseMethods.getCompletedQuestions(2, 'voice');
+    List<String> lvl3Written =
+        await _databaseMethods.getCompletedQuestions(3, 'written');
+    List<String> lvl3Voice =
+        await _databaseMethods.getCompletedQuestions(3, 'voice');
 
     setState(() {
       completedQuestions['characters'] = lvl1Written.length + lvl1Voice.length;
@@ -70,12 +80,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
         setState(() {
           currentXP = userDoc['exp'] ?? 0;
           hearts = userDoc['hearts'] ?? 0;
-          currentLevel = userDoc['currentLevel'] ?? 0;  // Fetch current level
+          currentLevel = userDoc['currentLevel'] ?? 0; // Fetch current level
         });
       }
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -138,9 +147,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                       Row(
                         children: [
-                          Icon(Icons.favorite,
-                              color: Colors.red,
-                              size: 28),
+                          Icon(Icons.favorite, color: Colors.red, size: 28),
                           SizedBox(width: 4),
                           Text(
                             "$hearts/5",
@@ -158,8 +165,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                    builder: (context) =>
-                                        const ProfilePage()),
+                                    builder: (context) => const ProfilePage()),
                               );
                             },
                           ),
@@ -212,15 +218,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             builder: (context) => LevelDetailScreen(
                               levelTitle: "Level 1: Characters",
                               collectionName: "characters",
-                              currentProgress: completedQuestions['characters'] ?? 0,
+                              currentProgress:
+                                  completedQuestions['characters'] ?? 0,
                               totalQuestions: totalQuestions['characters'] ?? 0,
                             ),
                           ),
                         ),
                         child: _buildProgressBox(
                           "Level 1: Characters",
-                          (completedQuestions['characters'] ?? 0) / 
-                          (totalQuestions['characters'] ?? 1),
+                          (completedQuestions['characters'] ?? 0) /
+                              (totalQuestions['characters'] ?? 1),
                           completedQuestions['characters'] ?? 0,
                           totalQuestions['characters'] ?? 0,
                         ),
@@ -241,8 +248,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ),
                         child: _buildProgressBox(
                           "Level 2: Words",
-                          (completedQuestions['words'] ?? 0) / 
-                          (totalQuestions['words'] ?? 1),
+                          (completedQuestions['words'] ?? 0) /
+                              (totalQuestions['words'] ?? 1),
                           completedQuestions['words'] ?? 0,
                           totalQuestions['words'] ?? 0,
                         ),
@@ -256,20 +263,49 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             builder: (context) => LevelDetailScreen(
                               levelTitle: "Level 3: Phrases",
                               collectionName: "phrases",
-                              currentProgress: completedQuestions['phrases'] ?? 0,
+                              currentProgress:
+                                  completedQuestions['phrases'] ?? 0,
                               totalQuestions: totalQuestions['phrases'] ?? 0,
                             ),
                           ),
                         ),
                         child: _buildProgressBox(
                           "Level 3: Phrases",
-                          (completedQuestions['phrases'] ?? 0) / 
-                          (totalQuestions['phrases'] ?? 1),
+                          (completedQuestions['phrases'] ?? 0) /
+                              (totalQuestions['phrases'] ?? 1),
                           completedQuestions['phrases'] ?? 0,
                           totalQuestions['phrases'] ?? 0,
                         ),
                       ),
                     ],
+                  ),
+                ),
+              ),
+            ),
+
+            // Button at the bottom to route to AssessmentScreen
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          const AssessmentScreen(), // Route to AssessmentScreen
+                    ),
+                  );
+                },
+                child: const Text(
+                  'Go to Assessment',
+                  style: TextStyle(fontSize: 18),
+                ),
+                style: ElevatedButton.styleFrom(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                  backgroundColor: Colors.purpleAccent,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15),
                   ),
                 ),
               ),
@@ -280,50 +316,39 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  // Helper function to build a progress box
-  Widget _buildProgressBox(String title, double progress, int currentProg, int total) {
+  Widget _buildProgressBox(
+      String levelName, double progress, int completed, int total) {
     return Container(
-      padding: const EdgeInsets.all(20),
-      margin: const EdgeInsets.symmetric(vertical: 5),
       decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.15),
         borderRadius: BorderRadius.circular(15),
-        gradient: LinearGradient(
-          colors: [Colors.white, Colors.white.withOpacity(0.9)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            spreadRadius: 2,
-            offset: Offset(5, 5),
-          ),
-        ],
+        border: Border.all(color: Colors.white.withOpacity(0.3)),
       ),
+      padding: const EdgeInsets.all(16),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            title,
-            style: TextStyle(
-              fontSize: 20,
+            levelName,
+            style: const TextStyle(
+              fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: Colors.black87,
+              color: Colors.white,
             ),
           ),
-          const SizedBox(height: 10),
+          SizedBox(height: 10),
           LinearProgressIndicator(
             value: progress,
-            backgroundColor: Colors.grey[300],
-            valueColor: AlwaysStoppedAnimation<Color>(
-                Colors.blueAccent.withOpacity(0.7)),
-            minHeight: 18,
+            backgroundColor: Colors.white.withOpacity(0.3),
+            valueColor: AlwaysStoppedAnimation<Color>(Colors.greenAccent),
+            minHeight: 10,
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 10),
           Text(
-            "$currentProg / $total",
-            style: TextStyle(fontSize: 16, color: Colors.black54),
+            "$completed/$total",
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.white.withOpacity(0.9),
+            ),
           ),
         ],
       ),
