@@ -1,7 +1,10 @@
+import 'dart:math';
 import 'dart:ui';
 import 'dart:io';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:lingomaster_final/service/database.dart';
 import 'package:signature/signature.dart';
 import 'package:gallery_picker/gallery_picker.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
@@ -11,10 +14,14 @@ import 'package:path_provider/path_provider.dart';
 
 class DrawScreen extends StatefulWidget {
   final String targetHiragana;
+  final String questionId;
+  final String collectionName;
 
   const DrawScreen({
     super.key,
     required this.targetHiragana,
+    required this.questionId,
+    required this.collectionName,
   });
 
   @override
@@ -22,6 +29,10 @@ class DrawScreen extends StatefulWidget {
 }
 
 class _DrawScreenState extends State<DrawScreen> {
+
+  final DatabaseMethods _databaseMethods = DatabaseMethods();
+  final Random _random = Random();
+
   final SignatureController _controller = SignatureController(
     penStrokeWidth: 10,
     penColor: Colors.black,
@@ -47,6 +58,20 @@ class _DrawScreenState extends State<DrawScreen> {
 
     if (!statuses.values.every((status) => status.isGranted)) {
       print("Not all permissions are granted");
+    }
+  }
+
+  // determine level from collection name
+  int _getLevelFromCollection() {
+    switch (widget.collectionName) {
+      case 'characters':
+        return 1;
+      case 'words':
+        return 2;
+      case 'phrases':
+        return 3;
+      default:
+        return 1; // Default to level 1 if collection name doesn't match
     }
   }
 
@@ -141,7 +166,6 @@ class _DrawScreenState extends State<DrawScreen> {
       final bytes = await drawnImage.toByteData(format: ImageByteFormat.png);
       if (bytes == null) return;
 
-      // Save to local storage
       final path = await _localPath;
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       final localFile = File('$path/drawn_image_$timestamp.png');
@@ -153,71 +177,110 @@ class _DrawScreenState extends State<DrawScreen> {
         double score = await _calculateScore(extractedText);
         bool passed = score >= 40.0;
 
+        int level = _getLevelFromCollection();
+
+        if (passed) {
+          // Modified to use new database method with level and type
+          await _databaseMethods.addCompletedQuestion(
+            widget.questionId,
+            level,
+            'written'
+          );
+          
+          int randomBonus = _random.nextInt(10) + 1;
+          int baseExp = _isPracticeMode ? 10 : 20;
+          int totalExp = baseExp + randomBonus;
+          await _databaseMethods.modifyUserExp(totalExp);
+        } else {
+          if (!_isPracticeMode) {
+            await _databaseMethods.modifyUserHearts(-1);
+          }
+        }
+
         if (!mounted) return;
 
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text("Your Score"),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  "Score: ${score.toStringAsFixed(1)}%",
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: passed ? Colors.green : Colors.red,
-                  ),
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text("Your Score"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                "Score: ${score.toStringAsFixed(1)}%",
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: passed ? Colors.green : Colors.red,
                 ),
-                Text(
-                  passed ? "Good job!" : "Keep Practicing!",
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: passed ? Colors.green : Colors.red,
-                  ),
+              ),
+              Text(
+                passed ? "Good job!" : "Keep Practicing!",
+                style: TextStyle(
+                  fontSize: 18,
+                  color: passed ? Colors.green : Colors.red,
                 ),
-                if (extractedText != null && extractedText.isNotEmpty) ...[
-                  const SizedBox(height: 10),
-                  Text(
-                    "Recognized text: $extractedText",
-                    style: const TextStyle(fontSize: 16),
-                  ),
-                ],
-                const SizedBox(height: 20),
-                const Text("Your Drawing:"),
-                SizedBox(
-                  height: 100,
-                  width: 100,
-                  child: Image.file(localFile),
-                ),
+              ),
+              if (passed) ...[
                 const SizedBox(height: 10),
-                Text(
-                  "Target Character: ${widget.targetHiragana}",
-                  style: const TextStyle(fontSize: 24),
+                const Text(
+                  "XP Added!",
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.blue,
+                  ),
+                ),
+              ] else if (!_isPracticeMode) ...[
+                const SizedBox(height: 10),
+                const Text(
+                  "Lost 1 Heart",
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.red,
+                  ),
                 ),
               ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  _controller.clear();
-                  Navigator.of(context).pop();
-                },
-                child: const Text("Try Again"),
+              if (extractedText != null && extractedText.isNotEmpty) ...[
+                const SizedBox(height: 10),
+                Text(
+                  "Recognized text: $extractedText",
+                  style: const TextStyle(fontSize: 16),
+                ),
+              ],
+              const SizedBox(height: 20),
+              const Text("Your Drawing:"),
+              SizedBox(
+                height: 100,
+                width: 100,
+                child: Image.file(localFile),
               ),
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text("Continue"),
+              const SizedBox(height: 10),
+              Text(
+                "Target Character: ${widget.targetHiragana}",
+                style: const TextStyle(fontSize: 24),
               ),
             ],
           ),
-        );
-      } catch (e) {
-        print('Error saving or processing image: $e');
-      }
+          actions: [
+            TextButton(
+              onPressed: () {
+                _controller.clear();
+                Navigator.of(context).pop();
+              },
+              child: const Text("Try Again"),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text("Continue"),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      print('Error saving or processing image: $e');
     }
   }
+}
 
   Future<void> _pickImage() async {
     try {
@@ -293,20 +356,22 @@ class _DrawScreenState extends State<DrawScreen> {
   }
 
   Widget _buildTracingTemplate() {
-    return Positioned.fill(
-      child: Center(
+  return Positioned.fill(
+    child: Center(
+      child: FittedBox(
+        fit: BoxFit.scaleDown, // Ensures the text scales down to fit
         child: Text(
           widget.targetHiragana,
           style: TextStyle(
-            fontSize: 200,
+            fontSize: 200, // Maximum font size, will scale down as needed
             color: Colors.grey.withOpacity(_opacity),
-            fontFamily:
-                'NotoSansJP', // Make sure to add this font to pubspec.yaml
+            fontFamily: 'NotoSansJP', // Ensure this font is included in pubspec.yaml
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildOpacityControls() {
     return Slider(
@@ -314,7 +379,7 @@ class _DrawScreenState extends State<DrawScreen> {
       min: 0.1,
       max: 0.5,
       divisions: 4,
-      label: 'Template Opacity',
+      label: 'Opacity',
       onChanged: (value) {
         setState(() {
           _opacity = value;
@@ -324,37 +389,46 @@ class _DrawScreenState extends State<DrawScreen> {
   }
 
   Future<void> _showPracticeModeDialog() async {
-    return showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Notice!'),
-          content: const Text(
-            'Practice only gives half the amount of experience points and will not be considered as level complete.',
-            style: TextStyle(fontSize: 16),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text('Cancel'),
+  return showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: const Text('Practice Mode'),
+        content: const Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Practice mode will be enabled:',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
-            TextButton(
-              onPressed: () {
-                setState(() {
-                  _showTrace = true;
-                  _isPracticeMode = true;
-                });
-                Navigator.of(context).pop();
-              },
-              child: const Text('Proceed'),
-            ),
+            SizedBox(height: 10),
+            Text('• Earn less XP for correct answers'),
+            Text('• Template tracing will be enabled'),
+            Text('• No hearts will be lost on failure'),
           ],
-        );
-      },
-    );
-  }
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              setState(() {
+                _showTrace = true;
+                _isPracticeMode = true;
+              });
+              Navigator.of(context).pop();
+            },
+            child: const Text('Proceed'),
+          ),
+        ],
+      );
+    },
+  );
+}
 
   Future<void> _showCameraPermissionDialog() async {
     return showDialog(
@@ -437,7 +511,7 @@ class _DrawScreenState extends State<DrawScreen> {
               ],
               if (_showTrace) ...[
                 const Text(
-                  "Adjust template opacity:",
+                  "Adjust opacity:",
                   style: TextStyle(fontSize: 16),
                 ),
                 _buildOpacityControls(),

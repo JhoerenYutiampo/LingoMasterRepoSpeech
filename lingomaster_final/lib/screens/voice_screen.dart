@@ -3,17 +3,25 @@ import 'package:string_similarity/string_similarity.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:speech_to_text/speech_to_text.dart';
+import 'package:lingomaster_final/service/database.dart';
+import 'dart:math';
 
 class VoiceScreen extends StatefulWidget {
   final String hiragana;
   final String english;
   final String audio;
+  final String questionId;
+  final String collectionName;
+  final String pronunciation;
 
   const VoiceScreen({
     Key? key,
     required this.hiragana,
     required this.english,
     required this.audio,
+    required this.questionId,
+    required this.collectionName,
+    required this.pronunciation,
   }) : super(key: key);
 
   @override
@@ -23,25 +31,39 @@ class VoiceScreen extends StatefulWidget {
 class _VoiceScreenState extends State<VoiceScreen> with SingleTickerProviderStateMixin {
   final AudioPlayer _audioPlayer = AudioPlayer();
   final SpeechToText _speechToText = SpeechToText();
-  final List<double> _audioLevels = List.filled(30, 0.0);
-  late AnimationController _animationController;
+  final DatabaseMethods _databaseMethods = DatabaseMethods();
+  final Random _random = Random();
   
   bool _isRecordingAvailable = false;
   String _wordsSpoken = "";
   double _confidenceLevel = 0;
   double _similarityScore = 0;
   bool _isRecording = false;
-  double _currentAudioLevel = 0.0;
+
+  int _getLevelFromCollection() {
+    switch (widget.collectionName) {
+      case 'characters':
+        return 1;
+      case 'words':
+        return 2;
+      case 'phrases':
+        return 3;
+      default:
+        return 1;
+    }
+  }
 
   @override
   void initState() {
     super.initState();
     _initSpeech();
     _checkPermissions();
-    _animationController = AnimationController(
-      vsync: this,
-      duration: Duration(milliseconds: 50),
-    );
+  }
+
+  @override
+  void dispose() {
+    _audioPlayer.dispose();
+    super.dispose();
   }
 
   Future<void> _initSpeech() async {
@@ -59,13 +81,6 @@ class _VoiceScreenState extends State<VoiceScreen> with SingleTickerProviderStat
         _isRecordingAvailable = false;
       });
     }
-  }
-
-  @override
-  void dispose() {
-    _audioPlayer.dispose();
-    _animationController.dispose();
-    super.dispose();
   }
 
   Future<void> _checkPermissions() async {
@@ -98,10 +113,6 @@ class _VoiceScreenState extends State<VoiceScreen> with SingleTickerProviderStat
       _wordsSpoken = "";
       _confidenceLevel = 0;
       _similarityScore = 0;
-      // Reset audio levels when starting new recording
-      for (int i = 0; i < _audioLevels.length; i++) {
-        _audioLevels[i] = 0.0;
-      }
     });
 
     await _speechToText.listen(
@@ -109,47 +120,47 @@ class _VoiceScreenState extends State<VoiceScreen> with SingleTickerProviderStat
         setState(() {
           _wordsSpoken = result.recognizedWords;
           _confidenceLevel = result.confidence;
-          _similarityScore = _wordsSpoken.toLowerCase().similarityTo(widget.english.toLowerCase());
+          _similarityScore = _wordsSpoken.toLowerCase().similarityTo(widget.pronunciation.toLowerCase());
         });
       },
       listenFor: Duration(seconds: 5),
       pauseFor: Duration(seconds: 2),
       partialResults: true,
-      onSoundLevelChange: (level) {
-        setState(() {
-          // Convert the level to a value between 0 and 1
-          _currentAudioLevel = (level + 160) / 160; // Normalize from dB
-          _currentAudioLevel = _currentAudioLevel.clamp(0.0, 1.0);
-          
-          // Shift array and add new value
-          _audioLevels.removeAt(0);
-          _audioLevels.add(_currentAudioLevel);
-        });
-      },
-      cancelOnError: true,
-      listenMode: ListenMode.confirmation,
     );
-
-    _animationController.repeat();
   }
 
   Future<void> _stopRecording() async {
     await _speechToText.stop();
     setState(() {
       _isRecording = false;
-      _currentAudioLevel = 0.0;
     });
-    _animationController.stop();
     
     if (_wordsSpoken.isNotEmpty) {
       _showScoreDialog();
     }
   }
 
-  void _showScoreDialog() {
-    final bool passed = _similarityScore >= 0.60;
+  Future<void> _showScoreDialog() async {
+    bool isCharacterCollection = widget.collectionName == 'characters';
+    bool passed = isCharacterCollection ? true : _similarityScore >= 0.60;
     
     if (!mounted) return;
+
+    if (passed) {
+      int level = _getLevelFromCollection();
+      await _databaseMethods.addCompletedQuestion(
+        widget.questionId,
+        level,
+        'voice'
+      );
+      
+      int randomBonus = _random.nextInt(10) + 1;
+      int baseExp = 20;
+      int totalExp = baseExp + randomBonus;
+      await _databaseMethods.modifyUserExp(totalExp);
+    } else {
+      await _databaseMethods.modifyUserHearts(-1);
+    }
     
     showDialog(
       context: context,
@@ -166,15 +177,17 @@ class _VoiceScreenState extends State<VoiceScreen> with SingleTickerProviderStat
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Your pronunciation score: ${(_similarityScore * 100).toStringAsFixed(1)}%',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 8),
-            Text(
-              'Confidence level: ${(_confidenceLevel * 100).toStringAsFixed(1)}%',
-              style: TextStyle(fontSize: 16),
-            ),
+            if (!isCharacterCollection) ...[
+              Text(
+                'Your pronunciation score: ${(_similarityScore * 100).toStringAsFixed(1)}%',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 8),
+              Text(
+                'Confidence level: ${(_confidenceLevel * 100).toStringAsFixed(1)}%',
+                style: TextStyle(fontSize: 16),
+              ),
+            ],
             SizedBox(height: 8),
             Text(
               'You said: $_wordsSpoken',
@@ -182,9 +195,28 @@ class _VoiceScreenState extends State<VoiceScreen> with SingleTickerProviderStat
             ),
             SizedBox(height: 4),
             Text(
-              'Target word: ${widget.english}',
+              'Target pronunciation: ${widget.pronunciation}',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
+            if (passed) ...[
+              SizedBox(height: 10),
+              Text(
+                "XP Added!",
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.blue,
+                ),
+              ),
+            ] else ...[
+              SizedBox(height: 10),
+              Text(
+                "Lost 1 Heart",
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.red,
+                ),
+              ),
+            ],
           ],
         ),
         actions: [
@@ -218,27 +250,6 @@ class _VoiceScreenState extends State<VoiceScreen> with SingleTickerProviderStat
     );
   }
 
-  Widget _buildAudioLevelIndicator() {
-    return Container(
-      height: 100,
-      width: MediaQuery.of(context).size.width * 0.8,
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade300),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: CustomPaint(
-          painter: AudioLevelPainter(
-            audioLevels: _audioLevels,
-            isListening: _isRecording,
-          ),
-          size: Size(MediaQuery.of(context).size.width * 0.8, 100),
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -253,14 +264,14 @@ class _VoiceScreenState extends State<VoiceScreen> with SingleTickerProviderStat
             Text(
               widget.hiragana,
               style: TextStyle(
-                fontSize: 120,
+                fontSize: 120 / (widget.hiragana.length.clamp(1, 10) * 0.6), // Adjusts size based on length
                 fontWeight: FontWeight.bold,
               ),
             ),
             SizedBox(height: 20),
             
             Text(
-              'Pronounced as: ${widget.english}',
+              'Pronounced as: ${widget.pronunciation}',
               style: TextStyle(
                 fontSize: 24,
                 color: Colors.grey[700],
@@ -289,7 +300,7 @@ class _VoiceScreenState extends State<VoiceScreen> with SingleTickerProviderStat
                         size: 40,
                         color: _isRecording ? Colors.red : (_isRecordingAvailable ? Colors.black : Colors.grey),
                       ),
-                      onPressed: _isRecordingAvailable
+                      onPressed: _isRecordingAvailable && (widget.collectionName != 'characters' || !_isRecording)
                           ? (_isRecording ? _stopRecording : _startRecording)
                           : null,
                       tooltip: _isRecordingAvailable 
@@ -300,18 +311,11 @@ class _VoiceScreenState extends State<VoiceScreen> with SingleTickerProviderStat
                       _isRecording 
                           ? 'Recording...' 
                           : (_isRecordingAvailable ? 'Begin' : 'Not available'),
-                      style: TextStyle(
-                        color: _isRecordingAvailable ? Colors.black : Colors.grey,
-                      ),
                     ),
                   ],
                 ),
               ],
             ),
-            SizedBox(height: 20),
-            
-            _buildAudioLevelIndicator(),
-            
             SizedBox(height: 20),
               
             if (_wordsSpoken.isNotEmpty)
@@ -328,47 +332,4 @@ class _VoiceScreenState extends State<VoiceScreen> with SingleTickerProviderStat
       ),
     );
   }
-}
-
-class AudioLevelPainter extends CustomPainter {
-  final List<double> audioLevels;
-  final bool isListening;
-
-  AudioLevelPainter({
-    required this.audioLevels,
-    required this.isListening,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..strokeWidth = (size.width / audioLevels.length) * 0.8
-      ..strokeCap = StrokeCap.round;
-
-    final barWidth = size.width / audioLevels.length;
-    final centerY = size.height / 2;
-    
-    for (int i = 0; i < audioLevels.length; i++) {
-      final barHeight = audioLevels[i] * (size.height * 0.8); // Use 80% of the height
-      final x = i * barWidth;
-      
-      // Create a gradient effect based on the audio level
-      paint.color = isListening 
-          ? Color.lerp(Colors.blue[300]!, Colors.blue[700]!, audioLevels[i])!
-          : Colors.grey[300]!;
-
-      // Draw bar from center, expanding both up and down
-      final halfBarHeight = barHeight / 2;
-      canvas.drawLine(
-        Offset(x + barWidth / 2, centerY - halfBarHeight),
-        Offset(x + barWidth / 2, centerY + halfBarHeight),
-        paint,
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(AudioLevelPainter oldDelegate) => 
-      oldDelegate.isListening != isListening ||
-      oldDelegate.audioLevels != audioLevels;
 }

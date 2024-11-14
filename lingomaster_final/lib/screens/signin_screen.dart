@@ -13,9 +13,10 @@ class SignInScreen extends StatefulWidget {
 }
 
 class _SignInScreenState extends State<SignInScreen> {
-  final TextEditingController _passwordTextContoller = TextEditingController();
-  final TextEditingController _emailTextContoller = TextEditingController();
+  final TextEditingController _passwordTextController = TextEditingController();
+  final TextEditingController _emailTextController = TextEditingController();
 
+  bool _isPasswordVisible = false; // Track password visibility
   String _errorMessage = '';
 
   @override
@@ -47,21 +48,44 @@ class _SignInScreenState extends State<SignInScreen> {
                   "Enter Email",
                   Icons.person_outline,
                   false,
-                  _emailTextContoller,
+                  _emailTextController,
                 ),
                 const SizedBox(height: 20),
-                reusableTextField(
-                  "Enter Password",
-                  Icons.lock_outline,
-                  false,
-                  _passwordTextContoller,
+                TextField(
+                  controller: _passwordTextController,
+                  obscureText: !_isPasswordVisible, // Control visibility
+                  decoration: InputDecoration(
+                    hintText: "Enter Password",
+                    prefixIcon: const Icon(Icons.lock_outline, color: Colors.white),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                        color: Colors.white,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _isPasswordVisible = !_isPasswordVisible;
+                        });
+                      },
+                    ),
+                    filled: true,
+                    fillColor: Colors.white.withOpacity(0.3),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(30),
+                      borderSide: BorderSide.none,
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
+                    hintStyle: const TextStyle(color: Colors.white70), // Hint text color
+                  ),
+                  style: const TextStyle(color: Colors.white), // Input text color
                 ),
+
                 const SizedBox(height: 20),
                 SignInSignUpButton(context, true, () async {
                   try {
                     await FirebaseAuth.instance.signInWithEmailAndPassword(
-                      email: _emailTextContoller.text,
-                      password: _passwordTextContoller.text,
+                      email: _emailTextController.text,
+                      password: _passwordTextController.text,
                     );
                     print("Signed In Successfully");
                     Navigator.push(

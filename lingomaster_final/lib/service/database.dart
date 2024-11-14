@@ -99,4 +99,97 @@ class DatabaseMethods {
       rethrow;
     }
   }
+
+  String _getFieldName(int level, String type) {
+    if (type != 'written' && type != 'voice') {
+      throw ArgumentError('Type must be either "written" or "voice"');
+    }
+    if (level < 1 || level > 3) {
+      throw ArgumentError('Level must be between 1 and 3');
+    }
+    return 'lvl${level}Prog${type.capitalize()}';
+  }
+
+  Future<void> addCompletedQuestion(String questionId, int level, String type) async {
+    try {
+      User? user = _auth.currentUser;
+      if (user?.uid == null) {
+        print("No user is currently signed in.");
+        return;
+      }
+
+      String fieldName = _getFieldName(level, type.toLowerCase());
+      DocumentReference userDoc = _firestore.collection('users').doc(user?.uid);
+      
+      await _firestore.runTransaction((transaction) async {
+        DocumentSnapshot snapshot = await transaction.get(userDoc);
+        
+        if (snapshot.exists) {
+          Map<String, dynamic> data = snapshot.data() as Map<String, dynamic>;
+          List<String> completedQuestions = List<String>.from(data[fieldName] ?? []);
+          
+          // Only add if not already present
+          if (!completedQuestions.contains(questionId)) {
+            completedQuestions.add(questionId);
+            
+            transaction.update(userDoc, {
+              fieldName: completedQuestions,
+            });
+          }
+        } else {
+          // If document doesn't exist, create it with initial array
+          transaction.set(userDoc, {
+            fieldName: [questionId],
+          }, SetOptions(merge: true));
+        }
+      });
+    } catch (e) {
+      print("Failed to add completed question: $e");
+      rethrow;
+    }
+  }
+
+  Future<List<String>> getCompletedQuestions(int level, String type) async {
+    try {
+      User? user = _auth.currentUser;
+      if (user?.uid == null) {
+        return [];
+      }
+
+      String fieldName = _getFieldName(level, type.toLowerCase());
+      DocumentSnapshot snapshot = await _firestore
+          .collection('users')
+          .doc(user!.uid)
+          .get();
+
+      if (snapshot.exists) {
+        Map<String, dynamic> data = snapshot.data() as Map<String, dynamic>;
+        return List<String>.from(data[fieldName] ?? []);
+      }
+
+      return [];
+    } catch (e) {
+      print("Failed to get completed questions: $e");
+      return [];
+    }
+  }
+
+  Future<int> getTotalQuestionsForLevel(String collection) async {
+    try {
+      QuerySnapshot snapshot = await _firestore.collection(collection).get();
+      return snapshot.size;
+    } catch (e) {
+      print("Failed to get total questions: $e");
+      return 0;
+    }
+  }
+  
 }
+
+// Extension to capitalize first letter of string
+extension StringExtension on String {
+  String capitalize() {
+    return "${this[0].toUpperCase()}${this.substring(1).toLowerCase()}";
+  }
+}
+

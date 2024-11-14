@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:lingomaster_final/screens/draw_screen.dart';
 import 'package:lingomaster_final/screens/voice_screen.dart';
+import 'package:lingomaster_final/service/database.dart';
 
-class LevelDetailScreen extends StatelessWidget {
+class LevelDetailScreen extends StatefulWidget {
   final String levelTitle;
   final String collectionName;
   final int currentProgress;
@@ -18,14 +19,51 @@ class LevelDetailScreen extends StatelessWidget {
   });
 
   @override
+  _LevelDetailScreenState createState() => _LevelDetailScreenState();
+}
+
+class _LevelDetailScreenState extends State<LevelDetailScreen> {
+  final DatabaseMethods _databaseMethods = DatabaseMethods();
+  List<String> completedWrittenQuestions = [];
+  List<String> completedVoiceQuestions = [];
+
+  int _getLevelFromCollection() {
+    switch (widget.collectionName) {
+      case 'characters':
+        return 1;
+      case 'words':
+        return 2;
+      case 'phrases':
+        return 3;
+      default:
+        return 1;
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCompletedQuestions();
+  }
+
+  Future<void> _loadCompletedQuestions() async {
+    int level = _getLevelFromCollection();
+    List<String> writtenQuestions = await _databaseMethods.getCompletedQuestions(level, 'written');
+    List<String> voiceQuestions = await _databaseMethods.getCompletedQuestions(level, 'voice');
+    
+    setState(() {
+      completedWrittenQuestions = writtenQuestions;
+      completedVoiceQuestions = voiceQuestions;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    double progress = currentProgress / totalQuestions;
+    double progress = widget.currentProgress / widget.totalQuestions;
 
     return Scaffold(
-      // Custom AppBar for aesthetic design
       appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(
-            120), // Increased height for a more spacious header
+        preferredSize: const Size.fromHeight(120),
         child: AppBar(
           flexibleSpace: Container(
             decoration: const BoxDecoration(
@@ -47,12 +85,11 @@ class LevelDetailScreen extends StatelessWidget {
               ],
             ),
           ),
-          backgroundColor:
-              Colors.transparent, // Transparent background to show gradient
+          backgroundColor: Colors.transparent,
           elevation: 0,
           centerTitle: true,
           title: Text(
-            levelTitle,
+            widget.levelTitle,
             style: const TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.bold,
@@ -70,7 +107,6 @@ class LevelDetailScreen extends StatelessWidget {
       ),
       body: Column(
         children: [
-          // Progress box at the top
           Container(
             padding: const EdgeInsets.all(20),
             margin: const EdgeInsets.all(15),
@@ -89,7 +125,7 @@ class LevelDetailScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "$levelTitle Progress",
+                  "${widget.levelTitle} Progress",
                   style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
@@ -100,13 +136,12 @@ class LevelDetailScreen extends StatelessWidget {
                 LinearProgressIndicator(
                   value: progress,
                   backgroundColor: Colors.grey[300],
-                  valueColor:
-                      const AlwaysStoppedAnimation<Color>(Colors.blueAccent),
+                  valueColor: const AlwaysStoppedAnimation<Color>(Colors.blueAccent),
                   minHeight: 15,
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  "$currentProgress / $totalQuestions",
+                  "${widget.currentProgress} / ${widget.totalQuestions}",
                   style: const TextStyle(
                     fontSize: 18,
                     color: Colors.black54,
@@ -115,11 +150,9 @@ class LevelDetailScreen extends StatelessWidget {
               ],
             ),
           ),
-
           Expanded(
             child: FutureBuilder<QuerySnapshot>(
-              future:
-                  FirebaseFirestore.instance.collection(collectionName).get(),
+              future: FirebaseFirestore.instance.collection(widget.collectionName).get(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
@@ -137,17 +170,14 @@ class LevelDetailScreen extends StatelessWidget {
                   padding: const EdgeInsets.all(16),
                   children: snapshot.data!.docs.map((doc) {
                     var symbol = doc['english'];
-                    final data = doc.data() as Map<String, dynamic>?;
-                    var symbolImage = data != null && data['image'] != null
-                        ? data['image'] as String
-                        : null;
+                    bool isWrittenCompleted = completedWrittenQuestions.contains(doc.id);
+                    bool isVoiceCompleted = completedVoiceQuestions.contains(doc.id);
 
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 20),
                       child: Container(
                         height: 100,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 15, vertical: 10),
+                        padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(15),
@@ -162,7 +192,6 @@ class LevelDetailScreen extends StatelessWidget {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            // Display symbol value in a larger font
                             Expanded(
                               child: Text(
                                 symbol,
@@ -173,38 +202,58 @@ class LevelDetailScreen extends StatelessWidget {
                                 ),
                               ),
                             ),
-                            // Display the pen and microphone icons
                             Row(
                               children: [
-                                IconButton(
-                                  icon: const Icon(Icons.edit,
-                                      color: Colors.indigo),
-                                  onPressed: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => DrawScreen(
-                                          targetHiragana: doc['hiragana'],
+                                Container(
+                                  decoration: BoxDecoration(
+                                    color: isWrittenCompleted ? Colors.green.withOpacity(0.1) : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: isWrittenCompleted 
+                                      ? Border.all(color: Colors.green, width: 2)
+                                      : null,
+                                  ),
+                                  child: IconButton(
+                                    icon: const Icon(Icons.edit, color: Colors.indigo),
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => DrawScreen(
+                                            targetHiragana: doc['hiragana'],
+                                            questionId: doc.id,
+                                            collectionName: widget.collectionName,
+                                          ),
                                         ),
-                                      ),
-                                    );
-                                  },
+                                      ).then((_) => _loadCompletedQuestions());
+                                    },
+                                  ),
                                 ),
-                                IconButton(
-                                  icon: const Icon(Icons.mic,
-                                      color: Colors.redAccent),
-                                  onPressed: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => VoiceScreen(
-                                          hiragana: doc['hiragana'],
-                                          english: doc['english'],
-                                          audio: doc['audio'],
+                                Container(
+                                  decoration: BoxDecoration(
+                                    color: isVoiceCompleted ? Colors.green.withOpacity(0.1) : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: isVoiceCompleted 
+                                      ? Border.all(color: Colors.green, width: 2)
+                                      : null,
+                                  ),
+                                  child: IconButton(
+                                    icon: const Icon(Icons.mic, color: Colors.redAccent),
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => VoiceScreen(
+                                            hiragana: doc['hiragana'],
+                                            english: doc['english'],
+                                            audio: doc['audio'],
+                                            pronunciation: doc['pronunciation'],
+                                            questionId: doc.id,  // Make sure to add this to VoiceScreen
+                                            collectionName: widget.collectionName,
+                                          ),
                                         ),
-                                      ),
-                                    );
-                                  },
+                                      ).then((_) => _loadCompletedQuestions());
+                                    },
+                                  ),
                                 ),
                               ],
                             ),
