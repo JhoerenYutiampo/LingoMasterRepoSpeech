@@ -238,6 +238,20 @@ class DatabaseMethods {
       print('Error updating user score: $e');
     }
   }
+
+    Future<bool> getIsAdmin() async {
+    try {
+      User? user = _auth.currentUser;
+      if (user == null) return false;
+
+      DocumentSnapshot snapshot = await _firestore.collection('users').doc(user.uid).get();
+      return snapshot.exists ? (snapshot.get('isAdmin') ?? false) : false;
+    } catch (e) {
+      print('Error checking admin status: $e');
+      return false;
+    }
+  }
+
   
 }
 

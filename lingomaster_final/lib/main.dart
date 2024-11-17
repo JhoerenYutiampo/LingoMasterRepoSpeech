@@ -1,5 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lingomaster_final/screens/signin_screen.dart';
 
 String category = "Level 1";
@@ -14,7 +15,11 @@ void main() async {
     projectId: 'lingo-master-c3b33',
     storageBucket: 'lingo-master-c3b33.appspot.com',
   ));
-  runApp(const MyApp());
+  runApp(
+    const ProviderScope(
+      child: MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {

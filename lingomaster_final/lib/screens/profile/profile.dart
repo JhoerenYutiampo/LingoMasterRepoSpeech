@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:lingomaster_final/component/text_box.dart';
-import 'package:lingomaster_final/screens/profile_picture.dart';
+import 'package:lingomaster_final/screens/profile/profile_picture.dart';
 import 'package:lingomaster_final/screens/signin_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -144,11 +144,6 @@ class _ProfilePageState extends State<ProfilePage> {
   Map<String, dynamic> levelInfo = calculateLevel(currentUser.exp);
   return Column(
     crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text('Level: ${levelInfo['level']}'),
-      //Text('Current EXP: ${levelInfo['currentExp']}'),
-      Text('EXP needed for next level: ${levelInfo['expNeededForNextLevel']}'),
-    ],
   );
 }
 

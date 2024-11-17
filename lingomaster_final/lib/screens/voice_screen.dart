@@ -28,7 +28,7 @@ class VoiceScreen extends StatefulWidget {
   State<VoiceScreen> createState() => _VoiceScreenState();
 }
 
-class _VoiceScreenState extends State<VoiceScreen> with SingleTickerProviderStateMixin {
+class _VoiceScreenState extends State<VoiceScreen> {
   final AudioPlayer _audioPlayer = AudioPlayer();
   final SpeechToText _speechToText = SpeechToText();
   final DatabaseMethods _databaseMethods = DatabaseMethods();
@@ -39,25 +39,32 @@ class _VoiceScreenState extends State<VoiceScreen> with SingleTickerProviderStat
   double _confidenceLevel = 0;
   double _similarityScore = 0;
   bool _isRecording = false;
+  bool _isAudioCompleted = false;
+  bool get _isCharacterMode => widget.collectionName == 'characters';
 
-  int _getLevelFromCollection() {
-    switch (widget.collectionName) {
-      case 'characters':
-        return 1;
-      case 'words':
-        return 2;
-      case 'phrases':
-        return 3;
-      default:
-        return 1;
-    }
-  }
+  int _getLevelFromCollection() => switch (widget.collectionName) {
+    'characters' => 1,
+    'words' => 2,
+    'phrases' => 3,
+    _ => 1,
+  };
 
   @override
   void initState() {
     super.initState();
-    _initSpeech();
-    _checkPermissions();
+    if (!_isCharacterMode) {
+      _initSpeech();
+      _checkPermissions();
+    }
+    _setupAudioListener();
+  }
+
+  void _setupAudioListener() {
+    _audioPlayer.onPlayerComplete.listen((event) {
+      if (_isCharacterMode && !_isAudioCompleted) {
+        _handleCharacterCompletion();
+      }
+    });
   }
 
   @override
@@ -68,45 +75,65 @@ class _VoiceScreenState extends State<VoiceScreen> with SingleTickerProviderStat
 
   Future<void> _initSpeech() async {
     try {
-      bool available = await _speechToText.initialize(
+      final available = await _speechToText.initialize(
         onError: (error) => print('Speech recognition error: $error'),
         onStatus: (status) => print('Speech recognition status: $status'),
       );
-      setState(() {
-        _isRecordingAvailable = available;
-      });
+      if (mounted) {
+        setState(() => _isRecordingAvailable = available);
+      }
     } catch (e) {
       print('Failed to initialize speech recognition: $e');
-      setState(() {
-        _isRecordingAvailable = false;
-      });
+      if (mounted) {
+        setState(() => _isRecordingAvailable = false);
+      }
     }
   }
 
   Future<void> _checkPermissions() async {
     final micPermission = await Permission.microphone.request();
-    
-    if (!micPermission.isGranted) {
-      _showPermissionError('Microphone');
+    if (!micPermission.isGranted && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Microphone permission is required for this feature'),
+          duration: Duration(seconds: 3),
+        ),
+      );
     }
   }
 
-  void _showPermissionError(String permissionType) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$permissionType permission is required for this feature'),
-        duration: Duration(seconds: 3),
-      ),
-    );
+  Future<void> _playAudio() async {
+    try {
+      await _audioPlayer.play(UrlSource(widget.audio));
+    } catch (e) {
+      print('Error playing audio: $e');
+      if (_isCharacterMode) {
+        // If audio fails but we're in character mode, still complete
+        _handleCharacterCompletion();
+      }
+    }
   }
 
-  Future<void> _playAudio() async {
-    await _audioPlayer.play(UrlSource(widget.audio));
+  Future<void> _handleCharacterCompletion() async {
+    if (_isAudioCompleted) return; // Prevent multiple completions
+
+    setState(() {
+      _isAudioCompleted = true;
+    });
+
+    await _databaseMethods.addCompletedQuestion(
+      widget.questionId,
+      _getLevelFromCollection(),
+      'voice'
+    );
+    
+    if (mounted) {
+      _showCompletionDialog(passed: true, isCharacter: true);
+    }
   }
 
   Future<void> _startRecording() async {
-    if (!_isRecordingAvailable) return;
+    if (!_isRecordingAvailable || _isRecording) return;
 
     setState(() {
       _isRecording = true;
@@ -117,51 +144,58 @@ class _VoiceScreenState extends State<VoiceScreen> with SingleTickerProviderStat
 
     await _speechToText.listen(
       onResult: (result) {
-        setState(() {
-          _wordsSpoken = result.recognizedWords;
-          _confidenceLevel = result.confidence;
-          _similarityScore = _wordsSpoken.toLowerCase().similarityTo(widget.pronunciation.toLowerCase());
-        });
+        if (mounted) {
+          setState(() {
+            _wordsSpoken = result.recognizedWords;
+            _confidenceLevel = result.confidence;
+            _similarityScore = _wordsSpoken.toLowerCase()
+                .similarityTo(widget.pronunciation.toLowerCase());
+          });
+        }
       },
-      listenFor: Duration(seconds: 5),
-      pauseFor: Duration(seconds: 2),
+      listenFor: const Duration(seconds: 5),
+      pauseFor: const Duration(seconds: 2),
       partialResults: true,
     );
   }
 
   Future<void> _stopRecording() async {
-    await _speechToText.stop();
-    setState(() {
-      _isRecording = false;
-    });
+    if (!_isRecording) return;
     
-    if (_wordsSpoken.isNotEmpty) {
-      _showScoreDialog();
+    await _speechToText.stop();
+    if (mounted) {
+      setState(() => _isRecording = false);
+      
+      if (_wordsSpoken.isNotEmpty) {
+        _showCompletionDialog(
+          passed: _similarityScore >= 0.60,
+          isCharacter: false,
+        );
+      }
     }
   }
 
-  Future<void> _showScoreDialog() async {
-    bool isCharacterCollection = widget.collectionName == 'characters';
-    bool passed = isCharacterCollection ? true : _similarityScore >= 0.60;
-    
-    if (!mounted) return;
-
+  Future<void> _showCompletionDialog({
+    required bool passed,
+    required bool isCharacter,
+  }) async {
     if (passed) {
-      int level = _getLevelFromCollection();
+      final level = _getLevelFromCollection();
       await _databaseMethods.addCompletedQuestion(
         widget.questionId,
         level,
         'voice'
       );
       
-      int randomBonus = _random.nextInt(10) + 1;
-      int baseExp = 20;
-      int totalExp = baseExp + randomBonus;
-      await _databaseMethods.modifyUserExp(totalExp);
-    } else {
-      await _databaseMethods.modifyUserHearts(-1);
+      if (!isCharacter) {
+        final randomBonus = _random.nextInt(10) + 1;
+        final totalExp = 20 + randomBonus;
+        await _databaseMethods.modifyUserExp(totalExp);
+      }
     }
     
+    if (!mounted) return;
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -177,67 +211,60 @@ class _VoiceScreenState extends State<VoiceScreen> with SingleTickerProviderStat
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (!isCharacterCollection) ...[
+            if (!isCharacter) ...[
               Text(
                 'Your pronunciation score: ${(_similarityScore * 100).toStringAsFixed(1)}%',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
-              SizedBox(height: 8),
+              const SizedBox(height: 8),
               Text(
                 'Confidence level: ${(_confidenceLevel * 100).toStringAsFixed(1)}%',
-                style: TextStyle(fontSize: 16),
+                style: const TextStyle(fontSize: 16),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'You said: $_wordsSpoken',
+                style: const TextStyle(fontSize: 16, fontStyle: FontStyle.italic),
               ),
             ],
-            SizedBox(height: 8),
-            Text(
-              'You said: $_wordsSpoken',
-              style: TextStyle(fontSize: 16, fontStyle: FontStyle.italic),
-            ),
-            SizedBox(height: 4),
+            const SizedBox(height: 4),
             Text(
               'Target pronunciation: ${widget.pronunciation}',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
-            if (passed) ...[
-              SizedBox(height: 10),
-              Text(
+            if (passed && !isCharacter) ...[
+              const SizedBox(height: 10),
+              const Text(
                 "XP Added!",
                 style: TextStyle(
                   fontSize: 16,
                   color: Colors.blue,
                 ),
               ),
-            ] else ...[
-              SizedBox(height: 10),
-              Text(
-                "Lost 1 Heart",
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.red,
-                ),
-              ),
             ],
           ],
         ),
         actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              setState(() {
-                _wordsSpoken = "";
-                _confidenceLevel = 0;
-                _similarityScore = 0;
-              });
-            },
-            child: Text('Try Again', style: TextStyle(fontSize: 16)),
-          ),
+          if (!passed)
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                setState(() {
+                  _wordsSpoken = "";
+                  _confidenceLevel = 0;
+                  _similarityScore = 0;
+                });
+              },
+              child: const Text('Try Again', style: TextStyle(fontSize: 16)),
+            ),
           if (passed)
             TextButton(
               onPressed: () {
                 Navigator.pop(context);
                 Navigator.pop(context);
               },
-              child: Text('Continue', 
+              child: const Text(
+                'Continue', 
                 style: TextStyle(
                   fontSize: 16,
                   color: Colors.green,
@@ -254,7 +281,7 @@ class _VoiceScreenState extends State<VoiceScreen> with SingleTickerProviderStat
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Practice Pronunciation'),
+        title: const Text('Practice Pronunciation'),
         backgroundColor: Colors.purple,
       ),
       body: Center(
@@ -264,11 +291,11 @@ class _VoiceScreenState extends State<VoiceScreen> with SingleTickerProviderStat
             Text(
               widget.hiragana,
               style: TextStyle(
-                fontSize: 120 / (widget.hiragana.length.clamp(1, 10) * 0.6), // Adjusts size based on length
+                fontSize: 120 / (widget.hiragana.length.clamp(1, 10) * 0.6),
                 fontWeight: FontWeight.bold,
               ),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             
             Text(
               'Pronounced as: ${widget.pronunciation}',
@@ -277,7 +304,7 @@ class _VoiceScreenState extends State<VoiceScreen> with SingleTickerProviderStat
                 color: Colors.grey[700],
               ),
             ),
-            SizedBox(height: 40),
+            const SizedBox(height: 40),
             
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -285,45 +312,55 @@ class _VoiceScreenState extends State<VoiceScreen> with SingleTickerProviderStat
                 Column(
                   children: [
                     IconButton(
-                      icon: Icon(Icons.hearing, size: 40),
-                      onPressed: _playAudio,
-                    ),
-                    Text('Listen to it'),
-                  ],
-                ),
-                SizedBox(width: 60),
-                Column(
-                  children: [
-                    IconButton(
-                      icon: Icon(
-                        _isRecording ? Icons.mic : Icons.mic_none,
-                        size: 40,
-                        color: _isRecording ? Colors.red : (_isRecordingAvailable ? Colors.black : Colors.grey),
-                      ),
-                      onPressed: _isRecordingAvailable && (widget.collectionName != 'characters' || !_isRecording)
-                          ? (_isRecording ? _stopRecording : _startRecording)
-                          : null,
-                      tooltip: _isRecordingAvailable 
-                          ? (_isRecording ? 'Stop' : 'Start') 
-                          : 'Recording not available',
+                      icon: const Icon(Icons.hearing, size: 40),
+                      onPressed: _isAudioCompleted ? null : _playAudio,
+                      color: _isAudioCompleted ? Colors.grey : Colors.black,
                     ),
                     Text(
-                      _isRecording 
-                          ? 'Recording...' 
-                          : (_isRecordingAvailable ? 'Begin' : 'Not available'),
+                      _isAudioCompleted ? 'Completed!' : 'Listen to it',
+                      style: TextStyle(
+                        color: _isAudioCompleted ? Colors.grey : Colors.black,
+                      ),
                     ),
                   ],
                 ),
+                if (!_isCharacterMode) ...[
+                  const SizedBox(width: 60),
+                  Column(
+                    children: [
+                      IconButton(
+                        icon: Icon(
+                          _isRecording ? Icons.mic : Icons.mic_none,
+                          size: 40,
+                          color: _isRecording 
+                              ? Colors.red 
+                              : (_isRecordingAvailable ? Colors.black : Colors.grey),
+                        ),
+                        onPressed: _isRecordingAvailable && !_isAudioCompleted
+                            ? (_isRecording ? _stopRecording : _startRecording)
+                            : null,
+                        tooltip: _isRecordingAvailable 
+                            ? (_isRecording ? 'Stop' : 'Start') 
+                            : 'Recording not available',
+                      ),
+                      Text(
+                        _isRecording 
+                            ? 'Recording...' 
+                            : (_isRecordingAvailable ? 'Begin' : 'Not available'),
+                      ),
+                    ],
+                  ),
+                ],
               ],
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
               
             if (_wordsSpoken.isNotEmpty)
               Padding(
-                padding: EdgeInsets.all(20),
+                padding: const EdgeInsets.all(20),
                 child: Text(
                   'You said: $_wordsSpoken',
-                  style: TextStyle(fontSize: 18),
+                  style: const TextStyle(fontSize: 18),
                   textAlign: TextAlign.center,
                 ),
               ),

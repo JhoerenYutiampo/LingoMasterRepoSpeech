@@ -230,7 +230,7 @@ class _AssessmentVoiceState extends State<AssessmentVoice> with SingleTickerProv
             SizedBox(height: 20),
             
             Text(
-              'Pronounced as: ${widget.pronunciation}',
+              'English: ${widget.english}',
               style: TextStyle(
                 fontSize: 24,
                 color: Colors.grey[700],
