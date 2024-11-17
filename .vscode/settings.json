@@ -1,3 +1,4 @@
 {
-    "git.enabled": false
+    "git.enabled": false,
+    "java.configuration.updateBuildConfiguration": "interactive"
 }

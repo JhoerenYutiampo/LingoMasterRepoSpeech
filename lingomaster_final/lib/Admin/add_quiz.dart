@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:lingomaster_final/service/database.dart';
+import 'package:lingomaster_final/service/databaseMethods.dart';
 import 'package:random_string/random_string.dart';
 
 class AddQuiz extends StatefulWidget {

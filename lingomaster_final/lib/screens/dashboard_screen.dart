@@ -6,7 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:lingomaster_final/Admin/add_question.dart';
 import 'package:lingomaster_final/screens/profile.dart';
 import 'package:lingomaster_final/screens/level_detail_screen.dart';
-import 'package:lingomaster_final/service/database.dart';
+import 'package:lingomaster_final/service/databaseMethods.dart';
 import 'package:lingomaster_final/utlis/color_utils.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -294,7 +294,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
               ),
 
-              // Button at the bottom to route to Assesment
+              // Button at the bottom to route to Add Question
               Padding(
                 padding: const EdgeInsets.all(20),
                 child: ElevatedButton(
@@ -306,16 +306,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                     );
                   },
-                  child: const Text(
-                    'Go to Add Question',
-                    style: TextStyle(fontSize: 18),
-                  ),
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
                     backgroundColor: Colors.purpleAccent,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(15),
                     ),
+                  ),
+                  child: const Text(
+                    'Go to Add Question',
+                    style: TextStyle(fontSize: 18),
                   ),
                 ),
               ),

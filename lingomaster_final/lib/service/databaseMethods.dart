@@ -183,6 +183,61 @@ class DatabaseMethods {
       return 0;
     }
   }
+
+  Future<int> getUserScore(String collection) async {
+    try {
+      User? user = _auth.currentUser;
+      String userId = user!.uid;
+      
+      DocumentSnapshot doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .collection('scores')
+          .doc(collection)
+          .get();
+      
+      return doc.exists ? doc.get('score') ?? 0 : 0;
+    } catch (e) {
+      print('Error getting user score: $e');
+      return 0;
+    }
+  }
+
+  Future<int> getUserHearts() async {
+    try {
+      User? user = _auth.currentUser;
+      String userId = user!.uid;
+      
+      DocumentSnapshot doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .get();
+      
+      return doc.exists ? doc.get('hearts') ?? 3 : 3;
+    } catch (e) {
+      print('Error getting user hearts: $e');
+      return 3;
+    }
+  }
+
+  Future<void> updateUserScore(String collection, int score) async {
+    try {
+      User? user = _auth.currentUser;
+      String userId = user!.uid;
+      
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .collection('scores')
+          .doc(collection)
+          .set({
+        'score': score,
+        'timestamp': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+    } catch (e) {
+      print('Error updating user score: $e');
+    }
+  }
   
 }
 

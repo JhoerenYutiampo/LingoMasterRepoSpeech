@@ -1,8 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:lingomaster_final/screens/home_page.dart';
-import 'package:lingomaster_final/service/database.dart';
-import 'package:lingomaster_final/screens/speech_card.dart';
+import 'package:lingomaster_final/screens/unused/home_page.dart';
+import 'package:lingomaster_final/service/databaseMethods.dart';
+import 'package:lingomaster_final/screens/unused/speech_card.dart';
 
 class Question extends StatefulWidget {
   final String category;

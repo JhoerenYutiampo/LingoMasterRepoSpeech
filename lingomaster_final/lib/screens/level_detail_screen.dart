@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:lingomaster_final/screens/assessment_screen.dart';
 import 'package:lingomaster_final/screens/draw_screen.dart';
 import 'package:lingomaster_final/screens/voice_screen.dart';
-import 'package:lingomaster_final/service/database.dart';
+import 'package:lingomaster_final/service/databaseMethods.dart';
 
 class LevelDetailScreen extends StatefulWidget {
   final String levelTitle;
@@ -247,7 +248,7 @@ class _LevelDetailScreenState extends State<LevelDetailScreen> {
                                             english: doc['english'],
                                             audio: doc['audio'],
                                             pronunciation: doc['pronunciation'],
-                                            questionId: doc.id,  // Make sure to add this to VoiceScreen
+                                            questionId: doc.id,
                                             collectionName: widget.collectionName,
                                           ),
                                         ),
@@ -264,6 +265,33 @@ class _LevelDetailScreenState extends State<LevelDetailScreen> {
                   }).toList(),
                 );
               },
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => AssesmentScreen(widget.collectionName),
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                backgroundColor: Colors.purpleAccent,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15),
+                ),
+              ),
+              child: const Text(
+                'Go to Assessment',
+                style: TextStyle(
+                  fontSize: 18,
+                  color: Colors.white,
+                ),
+              ),
             ),
           ),
         ],

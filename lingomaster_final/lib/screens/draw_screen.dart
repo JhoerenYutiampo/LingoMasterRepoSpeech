@@ -1,11 +1,9 @@
 import 'dart:math';
 import 'dart:ui';
 import 'dart:io';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:lingomaster_final/screens/level_detail_screen.dart';
-import 'package:lingomaster_final/service/database.dart';
+import 'package:lingomaster_final/service/databaseMethods.dart';
 import 'package:signature/signature.dart';
 import 'package:gallery_picker/gallery_picker.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
@@ -34,7 +32,7 @@ class _DrawScreenState extends State<DrawScreen> {
   final Random _random = Random();
 
   final SignatureController _controller = SignatureController(
-    penStrokeWidth: 10,
+    penStrokeWidth: 15,
     penColor: Colors.black,
     exportBackgroundColor: Colors.white,
   );

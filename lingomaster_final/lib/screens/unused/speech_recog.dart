@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:lingomaster_final/screens/home_page.dart';
-import 'package:lingomaster_final/service/database.dart';
+import 'package:lingomaster_final/screens/unused/home_page.dart';
+import 'package:lingomaster_final/service/databaseMethods.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:string_similarity/string_similarity.dart';
 
@@ -64,7 +64,7 @@ class _SpeechCardState extends State<SpeechCard> {
 
   Future<void> completeLevel() async {
     if (_similarityScore >= 0.60) {
-      await DatabaseMethods().addExpToUser(10);
+      //await DatabaseMethods().addExpToUser(10);
 
       Navigator.pushReplacement(
         context,
