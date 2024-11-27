@@ -1,7 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:lingomaster_final/reusable_widgets/reusable%20widget.dart';
+import 'package:lingomaster_final/screens/onboard_screen.dart';
 import 'package:lingomaster_final/screens/signup_screen.dart';
+import 'package:lingomaster_final/service/databaseMethods.dart';
 import 'package:lingomaster_final/utlis/color_utils.dart';
 import 'package:lingomaster_final/screens/dashboard/dashboard_screen.dart';
 
@@ -161,10 +163,24 @@ class _SignInScreenState extends State<SignInScreen> {
                           email: _emailTextController.text,
                           password: _passwordTextController.text,
                         );
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => DashboardScreen()),
-                        );
+                        
+                        // Check onboarded status
+                        DatabaseMethods databaseMethods = DatabaseMethods();
+                        bool isOnboarded = await databaseMethods.getIsOnboarded();
+                        
+                        if (!isOnboarded) {
+                          // Redirect to onboarding screen if not onboarded
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(builder: (context) => const OnboardingScreen()),
+                          );
+                        } else {
+                          // Redirect to dashboard if already onboarded
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(builder: (context) => DashboardScreen()),
+                          );
+                        }
                       } on FirebaseAuthException catch (e) {
                         _showErrorDialog(getFirebaseErrorMessage(e.code));
                       }

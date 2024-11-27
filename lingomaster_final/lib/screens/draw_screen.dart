@@ -23,7 +23,7 @@ class DrawScreen extends StatefulWidget {
     required this.collectionName,
   });
 
-  @override
+  @override  
   _DrawScreenState createState() => _DrawScreenState();
 }
 
@@ -32,14 +32,12 @@ class _DrawScreenState extends State<DrawScreen> {
   final Random _random = Random();
 
   final SignatureController _controller = SignatureController(
-    penStrokeWidth: 15,
+    penStrokeWidth: 17,
     penColor: Colors.black,
     exportBackgroundColor: Colors.white,
   );
   File? selectedMedia;
   double _opacity = 0.3;
-  bool _showTrace = false;
-  bool _isPracticeMode = false;
 
   Future<String> get _localPath async {
     final directory = await getApplicationDocumentsDirectory();
@@ -144,15 +142,11 @@ class _DrawScreenState extends State<DrawScreen> {
           );
 
           int randomBonus = _random.nextInt(10) + 1;
-          int baseExp = _isPracticeMode ? 10 : 20;
-          int totalExp = baseExp + randomBonus;
+          int totalExp = 20 + randomBonus;
           await _databaseMethods.modifyUserExp(totalExp);
 
           _showSuccessDialog(localFile, passed);
         } else {
-          if (!_isPracticeMode) {
-            //await _databaseMethods.modifyUserHearts(-1);
-          }
           _showFailureDialog(localFile, passed);
         }
 
@@ -186,8 +180,7 @@ class _DrawScreenState extends State<DrawScreen> {
           );
 
           int randomBonus = _random.nextInt(10) + 1;
-          int baseExp = _isPracticeMode ? 10 : 20;
-          int totalExp = baseExp + randomBonus;
+          int totalExp = 20 + randomBonus;
           await _databaseMethods.modifyUserExp(totalExp);
 
           _showSuccessDialog(selectedMedia!, true);
@@ -243,77 +236,6 @@ class _DrawScreenState extends State<DrawScreen> {
         setState(() {
           _opacity = value;
         });
-      },
-    );
-  }
-
-  Future<void> _showPracticeModeDialog() async {
-    return showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Practice Mode'),
-          content: const Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'Practice mode will be enabled:',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 10),
-              Text('• Earn less XP for correct answers'),
-              Text('• Template tracing will be enabled'),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () {
-                setState(() {
-                  _showTrace = true;
-                  _isPracticeMode = true;
-                });
-                Navigator.of(context).pop();
-              },
-              child: const Text('Proceed'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Future<void> _showCameraPermissionDialog() async {
-    return showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Gallery Access'),
-          content: const Text(
-            'This app needs access to your gallery to upload images. Would you like to proceed?',
-            style: TextStyle(fontSize: 16),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () async {
-                Navigator.of(context).pop();
-                await _pickImage();
-              },
-              child: const Text('Allow'),
-            ),
-          ],
-        );
       },
     );
   }
@@ -383,7 +305,7 @@ class _DrawScreenState extends State<DrawScreen> {
                 ),
                 child: Stack(
                   children: [
-                    if (_showTrace) _buildTracingTemplate(),
+                    _buildTracingTemplate(),
                     Signature(
                       controller: _controller,
                       width: 300,
@@ -393,30 +315,11 @@ class _DrawScreenState extends State<DrawScreen> {
                   ],
                 ),
               ),
-              if (!_showTrace) ...[
-                ElevatedButton(
-                  onPressed: _showPracticeModeDialog,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 40,
-                      vertical: 15,
-                    ),
-                  ),
-                  child: const Text(
-                    "Practice",
-                    style: TextStyle(fontSize: 18),
-                  ),
-                ),
-                const SizedBox(height: 20),
-              ],
-              if (_showTrace) ...[
-                const Text(
-                  "Adjust opacity:",
-                  style: TextStyle(fontSize: 16),
-                ),
-                _buildOpacityControls(),
-              ],
+              const Text(
+                "Adjust opacity:",
+                style: TextStyle(fontSize: 16),
+              ),
+              _buildOpacityControls(),
               const SizedBox(height: 10),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -452,7 +355,7 @@ class _DrawScreenState extends State<DrawScreen> {
             bottom: 16,
             right: 16,
             child: FloatingActionButton(
-              onPressed: _showCameraPermissionDialog,
+              onPressed: () => _showCameraPermissionDialog(),
               backgroundColor: Colors.purple,
               child: const Icon(
                 Icons.camera_alt,
@@ -462,6 +365,36 @@ class _DrawScreenState extends State<DrawScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Future<void> _showCameraPermissionDialog() async {
+    return showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Gallery Access'),
+          content: const Text(
+            'This app needs access to your gallery to upload images. Would you like to proceed?',
+            style: TextStyle(fontSize: 16),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.of(context).pop();
+                await _pickImage();
+              },
+              child: const Text('Allow'),
+            ),
+          ],
+        );
+      },
     );
   }
 }

@@ -252,6 +252,31 @@ class DatabaseMethods {
     }
   }
 
+  Future<bool> getIsOnboarded() async {
+    try {
+      User? user = _auth.currentUser;
+      if (user == null) return false;
+
+      DocumentSnapshot snapshot = await _firestore.collection('users').doc(user.uid).get();
+      return snapshot.exists ? (snapshot.get('onBoarded') ?? false) : false;
+    } catch (e) {
+      print('Error checking onboarded status: $e');
+      return false;
+    }
+  }
+
+  Future<void> setOnboarded(bool isOnboarded) async {
+    try {
+      User? user = _auth.currentUser;
+      if (user == null) return;
+
+      await _firestore.collection('users').doc(user.uid).update({
+        'onBoarded': isOnboarded,
+      });
+    } catch (e) {
+      print('Error setting onboarded status: $e');
+    }
+  }
   
 }
 

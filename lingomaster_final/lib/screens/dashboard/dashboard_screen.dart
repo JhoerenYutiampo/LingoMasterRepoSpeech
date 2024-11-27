@@ -29,6 +29,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     completedQuestions: {},
   );
 
+  bool _isAdmin = false;
+  
   @override
   void initState() {
     super.initState();
@@ -39,6 +41,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Future<void> _initializeData() async {
     await _setupUserDataListener();
     await _fetchQuestionData();
+    await _checkAdminStatus();
   }
 
   @override
@@ -119,6 +122,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _fetchQuestionData();
   }
 
+  Future<void> _checkAdminStatus() async {
+    final isAdmin = await _databaseMethods.getIsAdmin();
+    setState(() {
+      _isAdmin = isAdmin;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -169,24 +179,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ],
           ),
         ),
-        floatingActionButton: FloatingActionButton.extended(
-          onPressed: () async {
-            bool isAdmin = await _databaseMethods.getIsAdmin();
-            if (isAdmin) {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => AddQuestionPage()),
-              );
-            } else {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Access denied: Admins only.')),
-              );
-            }
-          },
-          label: const Text('Add Question'),
-          icon: const Icon(Icons.add),
-          backgroundColor: hexStringToColor("CB2B93"),
-        ),
+        floatingActionButton: _isAdmin 
+          ? FloatingActionButton.extended(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => AddQuestionPage()),
+                );
+              },
+              label: const Text('Add Question'),
+              icon: const Icon(Icons.add),
+              backgroundColor: hexStringToColor("CB2B93"),
+            )
+          : null,
       ),
     );
   }

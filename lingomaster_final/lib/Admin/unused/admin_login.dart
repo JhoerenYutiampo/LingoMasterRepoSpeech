@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:lingomaster_final/Admin/add_quiz.dart';
+import 'package:lingomaster_final/Admin/unused/add_quiz.dart';
 
 class AdminLogin extends StatefulWidget {
   const AdminLogin({super.key});

@@ -87,10 +87,10 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
               fontWeight: FontWeight.bold,
             ),
           ),
-          subtitle: Text(
-            question['english'],
-            style: const TextStyle(fontSize: 16),
-          ),
+          //subtitle: Text(
+          //  question['english'],
+          //  style: const TextStyle(fontSize: 16),
+          //),
           trailing: questionScores[index] == -1
               ? const Icon(Icons.arrow_forward_ios)
               : Icon(

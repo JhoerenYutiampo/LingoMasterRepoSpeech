@@ -34,19 +34,19 @@ class ProgressCard extends StatelessWidget {
           const Text(
             "Progress",
             style: TextStyle(
-              fontSize: 24,
+              fontSize: 20,
               fontWeight: FontWeight.bold,
               color: Colors.black87,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 4),
           LinearProgressIndicator(
             value: progress,
             backgroundColor: Colors.grey[300],
             valueColor: const AlwaysStoppedAnimation<Color>(Colors.blueAccent),
             minHeight: 15,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 4),
           Text(
             "$currentProgress / $totalQuestions",
             style: const TextStyle(
