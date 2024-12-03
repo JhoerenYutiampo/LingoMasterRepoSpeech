@@ -24,6 +24,7 @@ class QuestionCard extends ConsumerWidget {
     final symbol = doc['english'];
     final isWrittenCompleted = state.writtenQuestions.contains(doc.id);
     final isVoiceCompleted = state.voiceQuestions.contains(doc.id);
+    final isFullyCompleted = isWrittenCompleted && isVoiceCompleted;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 20),
@@ -44,6 +45,11 @@ class QuestionCard extends ConsumerWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
+            Checkbox(
+              value: isFullyCompleted,
+              onChanged: null,
+              activeColor: Colors.green,
+            ),
             Expanded(
               child: Text(
                 symbol,
@@ -58,13 +64,13 @@ class QuestionCard extends ConsumerWidget {
               children: [
                 PracticeButton(
                   icon: Icons.edit,
-                  color: Colors.indigo,
+                  color: isWrittenCompleted ? Colors.green : Colors.indigo,
                   isCompleted: isWrittenCompleted,
                   onPressed: () => _navigateToDrawScreen(context),
                 ),
                 PracticeButton(
                   icon: Icons.mic,
-                  color: Colors.redAccent,
+                  color: isVoiceCompleted ? Colors.green : Colors.redAccent,
                   isCompleted: isVoiceCompleted,
                   onPressed: () => _navigateToVoiceScreen(context),
                 ),

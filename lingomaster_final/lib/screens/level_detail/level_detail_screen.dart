@@ -8,6 +8,7 @@ import 'package:lingomaster_final/screens/level_detail/widgets/heart_dialog.dart
 import 'package:lingomaster_final/screens/level_detail/widgets/progress_card.dart';
 import 'package:lingomaster_final/screens/level_detail/widgets/questions_list.dart';
 import 'package:lingomaster_final/service/databaseMethods.dart';
+import 'package:lingomaster_final/utlis/color_utils.dart';
 
 class LevelDetailScreen extends ConsumerStatefulWidget {
   final String levelTitle;
@@ -97,23 +98,38 @@ class _LevelDetailScreenState extends ConsumerState<LevelDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: CustomAppBar(title: widget.levelTitle),
-      body: Column(
-        children: [
-          ProgressCard(
-            currentProgress: widget.currentProgress,
-            totalQuestions: widget.totalQuestions,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              hexStringToColor("CB2B93"),
+              hexStringToColor("5E6148"),
+              hexStringToColor("9546C4"),
+            ],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
           ),
-          Expanded(
-            child: QuestionsList(
-              collectionName: widget.collectionName,
-              scrollController: _scrollController,
-              onRefresh: () => ref.read(completedQuestionsProvider.notifier)
-                  .loadCompletedQuestions(_databaseMethods, _level),
+        ),
+        child: Column(
+          children: [
+            SizedBox(height: AppBar().preferredSize.height + MediaQuery.of(context).padding.top),
+            ProgressCard(
+              currentProgress: widget.currentProgress,
+              totalQuestions: widget.totalQuestions,
             ),
-          ),
-          AssessmentButton(onPressed: _checkHeartsAndNavigate),
-        ],
+            Expanded(
+              child: QuestionsList(
+                collectionName: widget.collectionName,
+                scrollController: _scrollController,
+                onRefresh: () => ref.read(completedQuestionsProvider.notifier)
+                    .loadCompletedQuestions(_databaseMethods, _level),
+              ),
+            ),
+            AssessmentButton(onPressed: _checkHeartsAndNavigate),
+          ],
+        ),
       ),
     );
   }
