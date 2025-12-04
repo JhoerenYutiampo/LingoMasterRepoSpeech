@@ -1,4 +1,4 @@
-# LingoMaster Speech
+# LingoMaster
 
 LingoMaster is a mobile application designed to facilitate and aid the learning of Hiragana through an engaging, gamified experience, and randomized quiz like structures.
 
