@@ -32,5 +32,3 @@ LingoMaster is a mobile application designed to facilitate and aid the learning 
 6. Run the app
    
     _flutter run_
-
-![Alt text](Lingomaster_Video.mp4)
