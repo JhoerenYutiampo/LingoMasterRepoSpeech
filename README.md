@@ -16,11 +16,15 @@ LingoMaster Speech is a simple Flutter-based language learning project that inte
 - **VS Code / Android Studio** – development tools  
 
 ##  Getting Started
-1. Clone the repository  
+1. Clone the repository
+   
     _git clone https://github.com/franccostan/LingoMasterRepoSpeech.git_
-2. Navigate to the project folder
+3. Navigate to the project folder
+   
     _cd LingoMasterRepoSpeech/lingomaster_final_
-3. Install dependencies
+4. Install dependencies
+   
     _flutter pub get_
-4. Run the app
+6. Run the app
+   
     _flutter run_
