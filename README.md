@@ -1,19 +1,23 @@
 # LingoMaster Speech
 
-LingoMaster Speech is a simple Flutter-based language learning project that integrates **speech recognition** to help users practice pronunciation and improve speaking skills. This project showcases the basic structure of a speech-driven learning app.
+LingoMaster is a mobile application designed to facilitate and aid the learning of Hiragana through an engaging, gamified experience, and randomized quiz like structures.
 
 ## Features
-- Speech-to-text functionality  
+- Gamified Quiz-like learning
 - Simple and clean UI  
-- Basic language-learning flow  
+- Basic language-learning flow for both written and audio
 - Cross-platform (Android/iOS) using Flutter  
 
 ## Technologies Used
-- **Flutter (Dart)** – main app development  
-- **Android SpeechRecognizer API** (via platform channels) 
+- **Flutter (Dart)** – main app development
+- **Firebase** - database used for both User Data, and the Application Data(questions)
+- **Android SpeechRecognizer API**
 - **iOS Speech Framework** 
 - **Git/GitHub** – version control  
-- **VS Code / Android Studio** – development tools  
+- **VS Code / Android Studio** – development tools
+- Supplementary packages form Dart were used for text recognition,
+   image(drawing) recognition, and speech recognition. (eg. google_mlkit_text_
+   recognition.dart, speech_to_text.dart)
 
 ##  Getting Started
 1. Clone the repository
